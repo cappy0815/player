@@ -41,6 +41,7 @@ sealed class Nav {
     data class LyricsEdit(val songId: Long) : Nav()
     data class LyricsSync(val songId: Long) : Nav()
     data object Info : Nav()
+    data object Queue : Nav()
 }
 
 /** Kleiner Navigationsstapel */
@@ -141,6 +142,7 @@ fun Root() {
                     is Nav.LyricsEdit -> LyricsEditScreen(n.songId)
                     is Nav.LyricsSync -> LyricsSyncScreen(n.songId)
                     Nav.Info -> InfoScreen()
+                    Nav.Queue -> QueueScreen()
                 }
             }
             if (Navi.top != Nav.Player && PlayerHub.currentId >= 0) MiniPlayer()

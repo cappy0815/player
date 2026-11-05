@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,15 +33,22 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
 @Composable
-fun TopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit = {}) {
+fun TopBar(title: String, onBack: (() -> Unit)? = null, tagline: String? = null, actions: @Composable RowScope.() -> Unit = {}) {
     Row(
         Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars).padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (onBack != null) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück", tint = Accent) }
         else Spacer(Modifier.width(12.dp))
-        Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium, maxLines = 1,
-            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
+            Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium, maxLines = 1,
+                overflow = TextOverflow.Ellipsis)
+            if (tagline != null) {
+                Spacer(Modifier.width(8.dp))
+                Text(tagline, color = Accent.copy(alpha = .85f), fontSize = 12.sp, maxLines = 1, softWrap = false,
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(bottom = 3.dp))
+            }
+        }
         actions()
     }
 }
@@ -56,7 +64,7 @@ fun LibraryScreen() {
     val scope = rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize()) {
-        TopBar("Player") {
+        TopBar("Player", tagline = TAGLINE) {
             IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
                 Icon(if (searching) Icons.Default.Close else Icons.Default.Search, "Suche", tint = Accent)
             }
@@ -69,6 +77,7 @@ fun LibraryScreen() {
                     DropdownMenuItem({ Text("Alle Titel: Cover prüfen") }, onClick = {
                         menu = false; Matcher.prepare("Alle Titel", Library.songs.toList(), MatchMode.COVER); Navi.go(Nav.Match)
                     })
+                    DropdownMenuItem({ Text("Wiedergabeliste") }, onClick = { menu = false; Navi.go(Nav.Queue) })
                     DropdownMenuItem({ Text("Abgleich-Ergebnisse") }, onClick = { menu = false; Navi.go(Nav.Match) })
                     DropdownMenuItem({ Text("Bibliothek neu einlesen") }, onClick = { menu = false; scope.launch { Library.load(ctx) } })
                     DropdownMenuItem({ Text("Einstellungen") }, onClick = { menu = false; Navi.go(Nav.Settings) })
@@ -116,7 +125,8 @@ fun LibraryScreen() {
                     items(albums, key = { it.first().albumId }) { list ->
                         val s = list.first()
                         GroupRow(s, s.album.ifBlank { "Unbekanntes Album" },
-                            "${list.map { it.artist }.distinct().take(2).joinToString(", ")} · ${list.size} Titel") {
+                            "${list.map { it.artist }.distinct().take(2).joinToString(", ")} · ${list.size} Titel",
+                            songs = { list.sortedBy { it.track } }) {
                             Navi.go(Nav.Album(s.albumId, s.album))
                         }
                     }
@@ -138,7 +148,7 @@ fun LibraryScreen() {
                 LazyColumn(Modifier.fillMaxSize()) {
                     items(artists, key = { "a:" + it.key }) { (name, list) ->
                         GroupRow(list.first(), name.ifBlank { "Unbekannter Interpret" },
-                            "${list.map { it.album }.distinct().size} Alben · ${list.size} Titel") { Navi.go(Nav.Artist(name)) }
+                            "${list.map { it.album }.distinct().size} Alben · ${list.size} Titel", songs = { list }) { Navi.go(Nav.Artist(name)) }
                     }
                 }
             }
@@ -153,14 +163,20 @@ object LibraryUi { var page by mutableIntStateOf(0) }
 fun rememberSaveableInt(v: Int) = androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(v) }
 
 @Composable
-fun GroupRow(cover: Song, title: String, sub: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp),
+fun GroupRow(cover: Song, title: String, sub: String, songs: (() -> List<Song>)? = null, onClick: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth().combinedClickable(onClick = onClick, onLongClick = { if (songs != null) menu = true })
+        .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = if (songs != null) 0.dp else 16.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Cover(cover, 56.dp)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(title, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(sub, color = TextDim, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (songs != null) Box {
+            IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Optionen", tint = TextDim) }
+            SongsMenu(menu, { menu = false }, title, songs = songs)
         }
     }
 }
@@ -196,16 +212,7 @@ fun SongRow(s: Song, onClick: () -> Unit) {
         Text(fmtTime(s.durationMs), color = TextDim, fontSize = 12.sp)
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Optionen", tint = TextDim) }
-            DropdownMenu(menu, { menu = false }, containerColor = Surface2) {
-                DropdownMenuItem({ Text("Tags bearbeiten") }, leadingIcon = { Icon(Icons.Default.Edit, null) },
-                    onClick = { menu = false; Navi.go(Nav.Editor(s.id)) })
-                DropdownMenuItem({ Text("Zur Playlist") }, leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, null) },
-                    onClick = { menu = false; PlaylistUi.pending = listOf(s) })
-                DropdownMenuItem({ Text("Tags online prüfen") }, leadingIcon = { Icon(Icons.Default.Sync, null) },
-                    onClick = { menu = false; Matcher.prepare(s.title.ifBlank { s.fileName }, listOf(s)); Navi.go(Nav.Match) })
-                DropdownMenuItem({ Text("Cover online prüfen") }, leadingIcon = { Icon(Icons.Default.Image, null) },
-                    onClick = { menu = false; Matcher.prepare(s.title.ifBlank { s.fileName }, listOf(s), MatchMode.COVER); Navi.go(Nav.Match) })
-            }
+            SongsMenu(menu, { menu = false }, s.title.ifBlank { s.fileName }, single = s) { listOf(s) }
         }
     }
 }
@@ -217,6 +224,7 @@ fun SongListScreen(title: String, songs: List<Song>, matchLabel: String) {
         SongList(songs, header = {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("Abspielen", filled = true, modifier = Modifier.weight(1f)) { PlayerHub.play(songs, 0) }
+                Pill("Anhängen", modifier = Modifier.weight(1f)) { PlayerHub.enqueue(songs) }
             }
             CheckButtons(matchLabel, songs)
         })
@@ -245,6 +253,10 @@ fun MiniPlayer() {
                 Icon(if (PlayerHub.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Play/Pause", tint = Accent, modifier = Modifier.size(32.dp))
             }
             IconButton(onClick = { PlayerHub.next() }) { Icon(Icons.Default.SkipNext, "Weiter", tint = Color.White) }
+            IconButton(onClick = { Navi.go(Nav.Queue) }) { Icon(Icons.AutoMirrored.Filled.QueueMusic, "Wiedergabeliste", tint = TextDim) }
         }
     }
 }
+
+/** Untertitel neben dem App-Namen */
+const val TAGLINE = "tag it · play it · sing it"

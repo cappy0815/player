@@ -1,5 +1,7 @@
 # Player
 
+*tag it · play it · sing it*
+
 Einfacher MP3-Player für Android mit eingebautem **Tag-Editor**, **Online-Abgleich** und **großen, mitlaufenden Lyrics**.
 
 Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
@@ -10,6 +12,8 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 - Bibliothek mit Titeln, Alben, Interpreten, Ordnern und Playlists, Wechsel per Wischen
 - Hintergrund-Wiedergabe mit Steuerung in Benachrichtigung und Sperrbildschirm
 - Zufall, Wiederholen, Pause beim Abziehen des Kopfhörers
+- Wiedergabeliste: ansehen, springen, sortieren, entfernen, als Playlist speichern
+- Langdruck-Menü für Lieder, Alben, Interpreten, Ordner und Playlists: Abspielen, Als Nächstes, Anhängen, Zur Playlist, Tags/Cover prüfen
 - Musikordner frei wählbar, kurze Dateien (Klingeltöne, Sprachnachrichten) ausblendbar
 
 **Tags & Cover**
@@ -42,7 +46,7 @@ Siehe [CHANGELOG.md](CHANGELOG.md). In der App unter ⋮ → Info, dort auch „
 
 ## Installation
 
-APK aus den [Releases](../../releases) laden und installieren (Installation aus unbekannten Quellen erlauben).
+APK aus den [Releases](https://github.com/cappy0815/player/releases) laden (Datei `Player-vX.Y.apk`) und installieren (Installation aus unbekannten Quellen erlauben).
 
 Beim ersten Start fragt die App nach Zugriff auf die Musik. Für das Speichern von Tags braucht sie zusätzlich **„Zugriff auf alle Dateien“**, für das Lyrics-Vollbild beim Sperren **„Über anderen Apps einblenden“**. Beides lässt sich in den Einstellungen der App erteilen.
 

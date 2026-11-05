@@ -1,7 +1,10 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package de.cappy.tagplayer
 
 import android.content.Context
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -147,8 +150,11 @@ fun PlaylistTab() {
         }
         items(Playlists.all, key = { it.id }) { pl ->
             val songs = pl.songs()
-            Row(Modifier.fillMaxWidth().clickable { Navi.go(Nav.PlaylistNav(pl.id)) }.padding(horizontal = 16.dp, vertical = 8.dp),
+            var menu by remember { mutableStateOf(false) }
+            Row(Modifier.fillMaxWidth().combinedClickable(onClick = { Navi.go(Nav.PlaylistNav(pl.id)) }, onLongClick = { menu = true })
+                .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically) {
+                Box { SongsMenu(menu, { menu = false }, "Playlist „${pl.name}“") { pl.songs() } }
                 Cover(songs.firstOrNull(), 56.dp)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
@@ -202,6 +208,7 @@ fun PlaylistScreen(id: Long) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Pill("Abspielen", filled = true, enabled = songs.isNotEmpty(), modifier = Modifier.weight(1f)) { PlayerHub.play(songs, 0) }
                     Pill("Zufällig", enabled = songs.isNotEmpty(), modifier = Modifier.weight(1f)) { PlayerHub.play(songs.shuffled(), 0) }
+                    Pill("Anhängen", enabled = songs.isNotEmpty(), modifier = Modifier.weight(1f)) { PlayerHub.enqueue(songs) }
                 }
                 CheckButtons("Playlist „${pl.name}“", songs, playlistButton = false)
             }

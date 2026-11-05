@@ -1,6 +1,12 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package de.cappy.tagplayer
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -72,13 +77,19 @@ fun FolderList(all: List<Song>, dir: String, header: (@Composable () -> Unit)? =
     LazyColumn(Modifier.fillMaxSize()) {
         if (header != null) item { header() }
         items(subs, key = { "d:" + it.first }) { (path, count) ->
-            Row(Modifier.fillMaxWidth().clickable { Navi.go(Nav.Folder(path)) }.padding(horizontal = 16.dp, vertical = 10.dp),
+            var menu by remember { mutableStateOf(false) }
+            Row(Modifier.fillMaxWidth().combinedClickable(onClick = { Navi.go(Nav.Folder(path)) }, onLongClick = { menu = true })
+                .padding(start = 16.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Folder, null, tint = Accent, modifier = Modifier.size(34.dp))
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(File(path).name, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("$count Titel", color = TextDim, fontSize = 13.sp)
+                }
+                Box {
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Optionen", tint = TextDim) }
+                    SongsMenu(menu, { menu = false }, "Ordner „${File(path).name}“") { Folders.songsBelow(Library.songs.toList(), path) }
                 }
             }
         }

@@ -94,6 +94,7 @@ object PlayerHub {
     var shuffle by mutableStateOf(false)
     var repeat by mutableIntStateOf(Player.REPEAT_MODE_OFF)
     var queueIds by mutableStateOf<List<Long>>(emptyList())
+    var currentIndex by mutableIntStateOf(-1)
 
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) = sync(player)
@@ -120,6 +121,7 @@ object PlayerHub {
         shuffle = p.shuffleModeEnabled
         repeat = p.repeatMode
         queueIds = (0 until p.mediaItemCount).mapNotNull { p.getMediaItemAt(it).mediaId.toLongOrNull() }
+        currentIndex = if (p.mediaItemCount > 0) p.currentMediaItemIndex else -1
     }
 
     fun position(): Long = controller?.currentPosition ?: 0L
@@ -140,6 +142,28 @@ object PlayerHub {
         c.setMediaItems(list.map { item(it) }, index.coerceIn(0, list.lastIndex), 0L)
         c.prepare(); c.play()
     }
+
+    // ---------- Wiedergabeliste ----------
+    /** Direkt hinter dem laufenden Titel einreihen; ist nichts geladen, sofort abspielen */
+    fun playNext(list: List<Song>) {
+        val c = controller ?: return
+        if (c.mediaItemCount == 0) { play(list, 0); return }
+        c.addMediaItems(c.currentMediaItemIndex + 1, list.map { item(it) })
+    }
+
+    /** Ans Ende der Wiedergabeliste anhängen; ist nichts geladen, sofort abspielen */
+    fun enqueue(list: List<Song>) {
+        val c = controller ?: return
+        if (c.mediaItemCount == 0) { play(list, 0); return }
+        c.addMediaItems(list.map { item(it) })
+        if (c.playbackState == Player.STATE_ENDED) { c.seekToDefaultPosition(c.mediaItemCount - list.size); c.play() }
+    }
+
+    fun jumpTo(i: Int) { controller?.let { if (i in 0 until it.mediaItemCount) { it.seekToDefaultPosition(i); it.play() } } }
+    fun removeAt(i: Int) { controller?.let { if (i in 0 until it.mediaItemCount && i != it.currentMediaItemIndex) it.removeMediaItem(i) } }
+    fun move(from: Int, to: Int) { controller?.let { if (from in 0 until it.mediaItemCount && to in 0 until it.mediaItemCount) it.moveMediaItem(from, to) } }
+    /** Alles nach dem laufenden Titel entfernen */
+    fun clearUpcoming() { controller?.let { val n = it.mediaItemCount; val c = it.currentMediaItemIndex; if (c + 1 < n) it.removeMediaItems(c + 1, n) } }
 
     fun toggle() { controller?.let { if (it.isPlaying) it.pause() else { if (it.playbackState == Player.STATE_IDLE) it.prepare(); it.play() } } }
     fun next() { controller?.seekToNextMediaItem() }

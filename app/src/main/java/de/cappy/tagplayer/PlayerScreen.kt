@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,6 +39,9 @@ fun PlayerScreen() {
 
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars)) {
         TopBar("Wiedergabe", onBack = { Navi.back() }) {
+            IconButton(onClick = { Navi.go(Nav.Queue) }) {
+                Icon(Icons.AutoMirrored.Filled.QueueMusic, "Wiedergabeliste", tint = Accent)
+            }
             IconButton(onClick = { ctx.startActivity(Intent(ctx, StageActivity::class.java)) }) {
                 Icon(Icons.Default.Fullscreen, "Lyrics-Display", tint = Accent)
             }
@@ -45,6 +49,7 @@ fun PlayerScreen() {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Menü", tint = Accent) }
                 DropdownMenu(menu, { menu = false }, containerColor = Surface2) {
                     DropdownMenuItem({ Text("Zur Playlist") }, onClick = { menu = false; s?.let { PlaylistUi.pending = listOf(it) } })
+                    DropdownMenuItem({ Text("Wiedergabeliste") }, onClick = { menu = false; Navi.go(Nav.Queue) })
                     DropdownMenuItem({ Text("Tags bearbeiten") }, onClick = { menu = false; s?.let { Navi.go(Nav.Editor(it.id)) } })
                     DropdownMenuItem({ Text("Lyrics suchen / bearbeiten") }, onClick = { menu = false; s?.let { Navi.go(Nav.LyricsEdit(it.id)) } })
                     DropdownMenuItem({ Text("Lyrics automatisch neu suchen") }, onClick = {

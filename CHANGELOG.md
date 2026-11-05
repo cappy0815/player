@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5
+- Wiedergabeliste: ansehen, springen, sortieren, entfernen, als Playlist speichern
+- Langdruck-Menü für Lieder, Alben, Interpreten, Ordner und Playlists
+- „Als Nächstes spielen“ und „An Wiedergabeliste anhängen“
+- Knopf „Anhängen“ in Album-, Interpreten- und Playlist-Ansicht
+- Untertitel „tag it · play it · sing it“
+
 ## 0.4.1
 - Cover-Prüfung nutzt zuerst den Namen des Speicherordners („Interpret - Album“ oder „Album“)
 - Lyrics-Vollbild: „Display immer an“ standardmäßig aktiv, per ☀/☾-Knopf umschaltbar

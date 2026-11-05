@@ -26,6 +26,13 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.5" to listOf(
+        "Wiedergabeliste: ansehen, springen, sortieren, entfernen, als Playlist speichern",
+        "Langdruck-Menü für Lieder, Alben, Interpreten, Ordner und Playlists",
+        "„Als Nächstes spielen“ und „An Wiedergabeliste anhängen“",
+        "Knopf „Anhängen“ in Album-, Interpreten- und Playlist-Ansicht",
+        "Untertitel „tag it · play it · sing it“"
+    ),
     "0.4.1" to listOf(
         "Cover-Prüfung nutzt zuerst den Namen des Speicherordners („Interpret - Album“ oder „Album“)",
         "Lyrics-Vollbild: „Display immer an“ standardmäßig aktiv, per ☀/☾-Knopf umschaltbar",
@@ -94,6 +101,7 @@ fun InfoScreen() {
             .windowInsetsPadding(WindowInsets.navigationBars)) {
             Card {
                 Text("Player", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+                Text(TAGLINE, color = Accent, fontSize = 13.sp)
                 Text("Version $version", color = TextDim, fontSize = 14.sp)
                 Spacer(Modifier.height(6.dp))
                 Text("MP3-Player mit Tag-Editor, Online-Abgleich und mitlaufenden Lyrics.", color = AccentSoft, fontSize = 14.sp)
