@@ -84,8 +84,14 @@ fun EditorScreen(songId: Long, preset: List<Candidate>, coverOnly: Boolean = fal
                     searching = true; searchInfo = ""
                     scope.launch {
                         try {
-                            cands = MusicBrainz.search(song, d)
-                            if (cands.isEmpty()) searchInfo = "Kein Treffer. Titel/Interpret von Hand eintragen und erneut suchen."
+                            cands = if (coverOnly) {
+                                val h = AlbumHints.forSong(song, d)
+                                val byAlbum = if (h != null) MusicBrainz.searchRelease(h, 0) else emptyList()
+                                if (h != null) searchInfo = "Gesucht mit " + (if (h.fromFolder) "Ordner" else "Album-Tag") + " „${h.label}“"
+                                (byAlbum + MusicBrainz.search(song, d)).sortedByDescending { it.confidence }
+                                    .distinctBy { it.releaseGroupId.ifBlank { it.releaseId } }
+                            } else MusicBrainz.search(song, d)
+                            if (cands.isEmpty()) searchInfo += (if (searchInfo.isNotBlank()) "\n" else "") + "Kein Treffer. Titel/Interpret von Hand eintragen und erneut suchen."
                         } catch (e: Exception) { searchInfo = e.message ?: "Fehler" }
                         searching = false
                     }

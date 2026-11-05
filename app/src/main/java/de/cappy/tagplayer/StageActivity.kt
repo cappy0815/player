@@ -79,10 +79,16 @@ class StageActivity : ComponentActivity() {
         super.onResume()
         resumed = true
         val prefs = Prefs.get(this)
-        val keep = !prefs.stageOnlyCharging || PlaybackService.isCharging(this)
+        applyKeepOn()
+        window.attributes = window.attributes.apply { screenBrightness = prefs.stageBrightness.coerceIn(1, 100) / 100f }
+    }
+
+    /** Display anlassen: Schalter "Immer an" und ggf. nur am Ladekabel */
+    fun applyKeepOn() {
+        val prefs = Prefs.get(this)
+        val keep = prefs.stageKeepOn && (!prefs.stageOnlyCharging || PlaybackService.isCharging(this))
         if (keep) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window.attributes = window.attributes.apply { screenBrightness = prefs.stageBrightness.coerceIn(1, 100) / 100f }
     }
 
     override fun onPause() {
@@ -114,6 +120,9 @@ fun Stage(prefs: Prefs, onClose: () -> Unit) {
         }
     }
     LaunchedEffect(Unit) { while (true) { now = Date(); delay(10_000) } }
+    // Beim Öffnen kurz anzeigen, ob das Display anbleibt
+    var hint by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) { delay(3500); hint = false }
     // Steuerung nach 6 s ausblenden
     LaunchedEffect(controls) { if (controls) { delay(6000); controls = false } }
     // Wiedergabe länger als 60 s gestoppt -> Anzeige schließen, Handy darf schlafen
@@ -150,6 +159,21 @@ fun Stage(prefs: Prefs, onClose: () -> Unit) {
         }
 
         AnimatedVisibility(
+            hint || controls, enter = fadeIn(), exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars).padding(top = 64.dp)
+        ) {
+            val charging = PlaybackService.isCharging(ctx)
+            Text(when {
+                    !prefs.stageKeepOn -> "Display geht normal aus  ·  ☾"
+                    prefs.stageOnlyCharging && !charging -> "Display bleibt nur am Ladekabel an"
+                    else -> "Display bleibt an  ·  ☀"
+                },
+                color = TextDim, fontSize = 13.sp,
+                modifier = Modifier.background(Surface.copy(alpha = .8f), androidx.compose.foundation.shape.RoundedCornerShape(50))
+                    .padding(horizontal = 14.dp, vertical = 6.dp))
+        }
+
+        AnimatedVisibility(
             controls, enter = fadeIn(), exit = fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 24.dp)
         ) {
@@ -160,6 +184,15 @@ fun Stage(prefs: Prefs, onClose: () -> Unit) {
                     Icon(if (PlayerHub.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Play/Pause", modifier = Modifier.size(36.dp))
                 }
                 IconButton(onClick = { PlayerHub.next(); controls = true }) { Icon(Icons.Default.SkipNext, "Weiter", tint = Color.White, modifier = Modifier.size(36.dp)) }
+                IconButton(onClick = {
+                    prefs.stageKeepOn = !prefs.stageKeepOn
+                    (ctx as? StageActivity)?.applyKeepOn()
+                    controls = true
+                }) {
+                    Icon(if (prefs.stageKeepOn) Icons.Default.LightMode else Icons.Default.Bedtime,
+                        if (prefs.stageKeepOn) "Display immer an" else "Display geht normal aus",
+                        tint = if (prefs.stageKeepOn) Accent else TextDim, modifier = Modifier.size(30.dp))
+                }
                 IconButton(onClick = onClose) { Icon(Icons.Default.Close, "Schließen", tint = TextDim, modifier = Modifier.size(30.dp)) }
             }
         }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+- Cover-Prüfung nutzt zuerst den Namen des Speicherordners („Interpret - Album“ oder „Album“)
+- Lyrics-Vollbild: „Display immer an“ standardmäßig aktiv, per ☀/☾-Knopf umschaltbar
+- Lyrics ohne Zeitangaben: Knopf „Zeiten beim Hören setzen“ direkt in der Lyrics-Ansicht
+
 ## 0.4
 - Laufendes Lied zur Playlist hinzufügen (Wiedergabe-Menü)
 - Lyrics: zweite Quelle lyrics.ovh, bereinigte Suche für Live-, Remaster- und feat.-Titel

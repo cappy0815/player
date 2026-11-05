@@ -13,7 +13,7 @@ import java.net.URLEncoder
 import java.text.Normalizer
 import kotlin.math.abs
 
-private const val UA = "Player/0.4 ( https://github.com/cappy0815 )"
+private const val UA = "Player/0.4.1 ( https://github.com/cappy0815 )"
 
 object Http {
     /** GET, liefert (Statuscode, Bytes). Folgt Weiterleitungen (Cover Art Archive -> archive.org). */
@@ -195,6 +195,52 @@ object MusicBrainz {
         return s.coerceIn(0, 100)
     }
 
+    /**
+     * Album-Suche (Veröffentlichungen) für die Cover-Prüfung, z. B. mit dem Ordnernamen.
+     * Ein Treffer pro Release-Gruppe; darin bevorzugt: offiziell, passende Titelanzahl, frühestes Datum.
+     * title = Albumname, damit die Trefferliste "Interpret – Album" zeigt.
+     */
+    suspend fun searchRelease(hint: AlbumHint, filesInFolder: Int): List<Candidate> {
+        if (hint.album.isBlank()) return emptyList()
+        var q = "release:\"${esc(hint.album)}\""
+        if (hint.artist.isNotBlank()) q += " AND artist:\"${esc(hint.artist)}\""
+        val (code, body) = throttled("https://musicbrainz.org/ws/2/release?fmt=json&limit=25&query=" + Http.enc(q))
+        if (code != 200 || body == null) throw Exception("MusicBrainz antwortet nicht (Code $code)")
+        val rels = JSONObject(String(body)).optJSONArray("releases") ?: return emptyList()
+        val byGroup = LinkedHashMap<String, Pair<Int, Candidate>>()
+        for (i in 0 until rels.length()) {
+            val r = rels.getJSONObject(i)
+            val rg = r.optJSONObject("release-group")?.optString("id") ?: ""
+            val artistName = credit(r.optJSONArray("artist-credit"))
+            var conf = r.optInt("score", 0)
+            val na = norm(hint.album); val nt = norm(r.optString("title"))
+            if (na != nt) conf -= if (nt.contains(na) || na.contains(nt)) 8 else 30
+            if (hint.artist.isNotBlank()) {
+                val x = norm(hint.artist); val y = norm(artistName)
+                if (x != y) conf -= if (y.contains(x) || x.contains(y)) 5 else 20
+            }
+            // Auswahl innerhalb der Gruppe
+            var pref = 0
+            if (r.optString("status") == "Official") pref += 50
+            if (r.optString("status") == "Bootleg") pref -= 100
+            if (filesInFolder > 0 && r.optInt("track-count", -1) == filesInFolder) pref += 30
+            val d = r.optString("date")
+            pref += if (d.length >= 4) (3000 - (d.take(4).toIntOrNull() ?: 3000)) / 20 else -20
+            val c = Candidate(
+                recordingId = "", releaseId = r.getString("id"), releaseGroupId = rg,
+                title = r.optString("title"), artist = artistName, album = r.optString("title"),
+                albumArtist = artistName, year = d.take(4), track = "",
+                trackTotal = r.optInt("track-count", 0).takeIf { it > 0 }?.toString() ?: "", disc = "",
+                lengthMs = 0, mbScore = r.optInt("score", 0), confidence = conf.coerceIn(0, 100)
+            )
+            val key = rg.ifBlank { c.releaseId }
+            val old = byGroup[key]
+            if (old == null || c.confidence > old.second.confidence || (c.confidence == old.second.confidence && pref > old.first))
+                byGroup[key] = pref to c
+        }
+        return byGroup.values.map { it.second }.sortedByDescending { it.confidence }.take(8)
+    }
+
     /** Cover vom Cover Art Archive (500 px), zuerst Veröffentlichung, dann Release-Gruppe */
     suspend fun cover(c: Candidate): ByteArray? = withContext(Dispatchers.IO) {
         val urls = listOf("https://coverartarchive.org/release/${c.releaseId}/front-500") +
@@ -368,5 +414,51 @@ object LyricsSearch {
         if (cleanTitle(title) != title) try { hits += LrcLib.search("$artist ${cleanTitle(title)}".trim()) } catch (_: Exception) {}
         LyricsOvh.find(artist, title, strict = false)?.let { hits += LyricsHit("lyrics.ovh", artist, title, "", 0.0, null, it.plain) }
         return hits.distinctBy { it.source + it.artist.lowercase() + it.title.lowercase() + it.durationSec.toInt() + it.hasSync }.take(25)
+    }
+}
+
+// ---------- Hinweis auf das Album aus dem Speicherordner ----------
+data class AlbumHint(val artist: String, val album: String, val fromFolder: Boolean) {
+    val label get() = if (artist.isBlank()) album else "$artist – $album"
+}
+
+object AlbumHints {
+    /** Ordnernamen, die nichts über das Album sagen */
+    private val GENERIC = setOf("music", "musik", "download", "downloads", "audio", "mp3", "mp3s", "songs", "lieder",
+        "whatsapp audio", "sounds", "media", "sdcard", "emulated", "storage", "alben", "albums", "albumy", "neu", "new",
+        "sonstiges", "various", "diverse", "misc", "ringtones", "notifications", "recordings", "aufnahmen", "telegram")
+
+    private fun cleanFolder(x: String): String = x
+        .replace('_', ' ')
+        .replace(Regex("[(\\[]\\s*(19|20)\\d{2}\\s*[)\\]]"), " ")                 // "(1986)" / "[2015]"
+        .replace(Regex("^\\s*(19|20)\\d{2}\\s*[-–.]\\s*"), "")                     // "1986 - Album"
+        .replace(Regex("[(\\[][^)\\]]*(flac|mp3|320|kbps|cd ?rip|web)[^)\\]]*[)\\]]", RegexOption.IGNORE_CASE), " ")
+        .trim().replace(Regex("\\s+"), " ")
+
+    /** Ordner, in dem das Album liegt ("CD1", "Disc 2" usw. werden übersprungen) */
+    fun albumDir(s: Song): java.io.File? {
+        var dir = java.io.File(s.path).parentFile ?: return null
+        if (Regex("^(cd|disc|disk|teil)\\s*\\d+.*$", RegexOption.IGNORE_CASE).matches(dir.name.trim())) dir = dir.parentFile ?: dir
+        return dir
+    }
+
+    /**
+     * Album-Hinweis: zuerst der Ordnername ("Interpret - Album" oder "Album" mit Interpret aus Tag bzw.
+     * Oberordner), sonst das Album-Tag.
+     */
+    fun forSong(s: Song, tag: TagData?): AlbumHint? {
+        val tagArtist = tag?.albumArtist?.ifBlank { null } ?: tag?.artist?.ifBlank { null } ?: s.artist
+        val tagAlbum = tag?.album?.ifBlank { null } ?: s.album
+        val dir = albumDir(s)
+        val n = cleanFolder(dir?.name ?: "")
+        val parent = cleanFolder(dir?.parentFile?.name ?: "")
+        val folderUseful = n.isNotBlank() && norm(n) !in GENERIC && norm(n) != norm(tagArtist)
+        if (folderUseful) {
+            val parts = n.split(Regex("\\s+[-–]\\s+"), limit = 2)
+            if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) return AlbumHint(parts[0].trim(), parts[1].trim(), true)
+            val artist = tagArtist.ifBlank { if (parent.isNotBlank() && norm(parent) !in GENERIC) parent else "" }
+            return AlbumHint(artist, n, true)
+        }
+        return if (tagAlbum.isNotBlank()) AlbumHint(tagArtist, tagAlbum, false) else null
     }
 }

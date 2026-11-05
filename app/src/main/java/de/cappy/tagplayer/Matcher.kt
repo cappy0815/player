@@ -102,20 +102,37 @@ object Matcher {
             val has = withContext(Dispatchers.IO) { try { Tags.read(it.song.path).cover != null } catch (_: Exception) { false } }
             if (has && !replaceCovers) { it.state = MatchState.SAME; it.info = "Cover vorhanden" } else todo += it
         }
-        // 2. Pro Album (MediaStore-Album = gleicher Name im gleichen Ordner) einmal suchen
-        val groups = todo.groupBy { it.song.albumId }
-        for ((_, group) in groups) {
+        // 2. Gruppieren: aussagekräftiger Ordner = ein Album, sonst nach MediaStore-Album
+        data class G(val hint: AlbumHint?, val items: MutableList<MatchItem>)
+        val groups = LinkedHashMap<String, G>()
+        for (it in todo) {
+            val tag = withContext(Dispatchers.IO) { try { Tags.read(it.song.path) } catch (_: Exception) { null } }
+            val h = AlbumHints.forSong(it.song, tag)
+            val key = if (h?.fromFolder == true) "f:" + (AlbumHints.albumDir(it.song)?.path ?: "") else "a:${it.song.albumId}"
+            groups.getOrPut(key) { G(h, ArrayList()) }.items += it
+        }
+        for ((key, g) in groups) {
+            val group = g.items
             currentCoroutineContext().ensureActive()
             group.forEach { it.state = MatchState.RUNNING }
             try {
                 val first = group.first()
-                val old = withContext(Dispatchers.IO) { Tags.read(first.song.path) }
-                val cands = MusicBrainz.search(first.song, old)
+                // a) Album-Suche über den Ordnernamen bzw. das Album-Tag
+                val files = if (key.startsWith("f:")) java.io.File(key.removePrefix("f:")).walkTopDown().maxDepth(2)
+                    .count { f -> f.isFile && f.extension.lowercase() == "mp3" } else 0
+                var cands = if (g.hint != null) MusicBrainz.searchRelease(g.hint, files) else emptyList()
+                // b) zusätzlich über den Titel, falls die Album-Suche nichts Sicheres findet
+                if ((cands.firstOrNull()?.confidence ?: 0) < prefs.threshold) {
+                    val old = withContext(Dispatchers.IO) { Tags.read(first.song.path) }
+                    cands = (cands + MusicBrainz.search(first.song, old)).sortedByDescending { it.confidence }
+                        .distinctBy { it.releaseGroupId.ifBlank { it.releaseId } }
+                }
                 group.forEach { it.candidates = cands }
                 val best = cands.firstOrNull()
-                if (best == null) { group.forEach { it.state = MatchState.NONE; it.info = "Kein Treffer" }; continue }
+                val via = if (g.hint?.fromFolder == true) "Ordner „${g.hint.label}“" else "Album-Tag"
+                if (best == null) { group.forEach { it.state = MatchState.NONE; it.info = "Kein Treffer ($via)" }; continue }
                 if (best.confidence < prefs.threshold || !autoApply) {
-                    group.forEach { it.state = MatchState.REVIEW; it.info = "${best.confidence} %  ·  ${best.album} (${best.artist})" }
+                    group.forEach { it.state = MatchState.REVIEW; it.info = "${best.confidence} %  ·  ${best.album} (${best.artist})  ·  $via" }
                     continue
                 }
                 val cover = MusicBrainz.cover(best)
@@ -128,7 +145,7 @@ object Matcher {
                         }
                         changed += it.song.path
                         it.state = MatchState.APPLIED
-                        it.info = "${best.confidence} %  ·  Cover von „${best.album}“"
+                        it.info = "${best.confidence} %  ·  Cover von „${best.album}“  ·  $via"
                     } catch (e: Exception) { it.state = MatchState.ERROR; it.info = e.message ?: e.javaClass.simpleName }
                 }
             } catch (e: CancellationException) { throw e

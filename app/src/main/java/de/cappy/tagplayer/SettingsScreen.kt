@@ -113,6 +113,8 @@ fun SettingsScreen() {
                     p.stageOnLock = it
                     if (it && !Settings.canDrawOverlays(ctx)) openOverlaySettings(ctx)
                 }
+                SwitchRow("Display im Vollbild immer an", "Standard. Im Vollbild auch per ☀/☾-Knopf umschaltbar (antippen blendet ihn ein)",
+                    p.stageKeepOn) { p.stageKeepOn = it }
                 SwitchRow("Display nur am Ladekabel anlassen", "Ohne Kabel geht das Display nach dem normalen Timeout aus",
                     p.stageOnlyCharging) { p.stageOnlyCharging = it }
                 SwitchRow("Einbrennschutz", "Inhalt wandert jede Minute ein Stück (OLED)", p.pixelShift) { p.pixelShift = it }

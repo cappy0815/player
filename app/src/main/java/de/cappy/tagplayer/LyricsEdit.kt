@@ -256,6 +256,7 @@ fun LyricsSyncScreen(songId: Long) {
                         LyricsStore.setManual(ctx, song, lrc, "eigene (synchron)")
                         Toast.makeText(ctx, "Synchronisierte Lyrics gespeichert", Toast.LENGTH_SHORT).show()
                         Navi.back(); if (Navi.top is Nav.LyricsEdit) Navi.back()
+                        PlayerUi.showLyrics = true
                     }
                 }
             }

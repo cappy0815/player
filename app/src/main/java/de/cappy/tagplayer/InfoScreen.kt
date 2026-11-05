@@ -26,6 +26,11 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.4.1" to listOf(
+        "Cover-Prüfung nutzt zuerst den Namen des Speicherordners („Interpret - Album“ oder „Album“)",
+        "Lyrics-Vollbild: „Display immer an“ standardmäßig aktiv, per ☀/☾-Knopf umschaltbar",
+        "Lyrics ohne Zeitangaben: Knopf „Zeiten beim Hören setzen“ direkt in der Lyrics-Ansicht"
+    ),
     "0.4" to listOf(
         "Laufendes Lied zur Playlist hinzufügen (Wiedergabe-Menü)",
         "Lyrics: zweite Quelle lyrics.ovh, bereinigte Suche für Live-, Remaster- und feat.-Titel",

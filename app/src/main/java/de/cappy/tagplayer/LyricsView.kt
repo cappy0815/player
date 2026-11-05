@@ -50,7 +50,8 @@ fun LyricsView(
     modifier: Modifier = Modifier,
     dim: Float = 1f,
     seekOnTap: Boolean = true,
-    onEdit: (() -> Unit)? = null
+    onEdit: (() -> Unit)? = null,
+    onSync: ((Lyrics) -> Unit)? = null
 ) {
     if (lyrics == null) {
         Box(modifier, contentAlignment = Alignment.Center) {
@@ -132,7 +133,12 @@ fun LyricsView(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                 .then(if (onEdit != null) Modifier.clickable(onClick = onEdit) else Modifier)
         )
-        if (onEdit != null) Text(if (lyrics.synced) "Bearbeiten · Zeitversatz" else "Bearbeiten · synchronisieren",
+        if (!lyrics.synced && onSync != null) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.Center) {
+                Pill("Zeiten beim Hören setzen", filled = true) { onSync(lyrics) }
+            }
+        }
+        if (onEdit != null) Text(if (lyrics.synced) "Bearbeiten · Zeitversatz" else "Andere Lyrics suchen · bearbeiten",
             color = Accent.copy(alpha = .9f * dim), fontSize = 12.sp, textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit).padding(bottom = 6.dp))
     }

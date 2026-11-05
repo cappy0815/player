@@ -183,6 +183,10 @@ class Prefs private constructor(ctx: Context) {
     /** Beim Sperren (Display aus) während der Wiedergabe die Lyrics-Anzeige zeigen */
     var stageOnLock: Boolean get() = _onLock.value; set(v) { _onLock.value = v; sp.edit().putBoolean("stageOnLock", v).apply() }
 
+    private val _keepOn = b("stageKeepOn", true)
+    /** Im Lyrics-Vollbild Display anlassen (Standard an, im Vollbild per Knopf umschaltbar) */
+    var stageKeepOn: Boolean get() = _keepOn.value; set(v) { _keepOn.value = v; sp.edit().putBoolean("stageKeepOn", v).apply() }
+
     private val _onlyCharging = b("stageOnlyCharging", false)
     var stageOnlyCharging: Boolean get() = _onlyCharging.value; set(v) { _onlyCharging.value = v; sp.edit().putBoolean("stageOnlyCharging", v).apply() }
 

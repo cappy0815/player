@@ -66,7 +66,8 @@ fun PlayerScreen() {
             if (page == 1) {
                 val cur = if (LyricsStore.currentSongId == s.id) LyricsStore.current else null
                 LyricsView(cur, LyricsStore.status, (prefs.stageFontSp * 0.7f).toInt().coerceAtLeast(22), Modifier.fillMaxSize(),
-                    onEdit = { Navi.go(Nav.LyricsEdit(s.id)) })
+                    onEdit = { Navi.go(Nav.LyricsEdit(s.id)) },
+                    onSync = { l -> SyncUi.text = l.toLrc(); Navi.go(Nav.LyricsSync(s.id)) })
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Cover(s, coverSize, 20.dp, px = 800) }
             }

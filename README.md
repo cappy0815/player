@@ -18,18 +18,19 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 - Online-Abgleich über [MusicBrainz](https://musicbrainz.org), Cover vom [Cover Art Archive](https://coverartarchive.org)
 - Prüfung für einzelne Titel, Alben, Interpreten, ganze Ordner oder Playlists
 - Sichere Treffer (Schwelle einstellbar) werden automatisch gespeichert, unsichere landen in „Prüfen“
-- Cover-Prüfung getrennt von den Tags: nur fehlende Cover ergänzen oder vorhandene ersetzen
+- Cover-Prüfung getrennt von den Tags: nur fehlende Cover ergänzen oder vorhandene ersetzen; der Name des Speicherordners („Interpret - Album“ oder „Album“) dient als erster Hinweis
 - Abgleich nur auf Knopfdruck, nie automatisch im Hintergrund
 
 **Lyrics**
 - Automatische Suche über [LRCLIB](https://lrclib.net) und [lyrics.ovh](https://lyrics.ovh), synchronisierte Texte bevorzugt
 - Live-, Remaster- und feat.-Titel werden für die Suche bereinigt
 - Manuelle Suche mit Trefferliste, Interpret und Titel frei eingebbar
-- Eigenen Text einfügen und per Tippen synchronisieren, Zeitversatz für synchrone Texte
+- Text ohne Zeitangaben wird trotzdem angezeigt; Zeiten lassen sich beim Hören per Tippen setzen
+- Eigenen Text einfügen, Zeitversatz für synchrone Texte
 - Aktuelle Zeile wird beim Abspielen hervorgehoben und mittig gehalten
 - Zeile antippen springt an diese Stelle im Lied
 - Optional in die MP3 schreiben
-- **Vollbild-Lyrics:** schwarz, große Schrift, gedimmt, auch über dem Sperrbildschirm, mit Einbrennschutz für OLED
+- **Vollbild-Lyrics:** schwarz, große Schrift, gedimmt, Display bleibt an (umschaltbar), auch über dem Sperrbildschirm, mit Einbrennschutz für OLED
 
 **Playlists**
 - Anlegen, umbenennen, sortieren, löschen
