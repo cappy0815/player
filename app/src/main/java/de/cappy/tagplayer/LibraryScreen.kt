@@ -72,6 +72,7 @@ fun LibraryScreen() {
                     DropdownMenuItem({ Text("Abgleich-Ergebnisse") }, onClick = { menu = false; Navi.go(Nav.Match) })
                     DropdownMenuItem({ Text("Bibliothek neu einlesen") }, onClick = { menu = false; scope.launch { Library.load(ctx) } })
                     DropdownMenuItem({ Text("Einstellungen") }, onClick = { menu = false; Navi.go(Nav.Settings) })
+                    DropdownMenuItem({ Text("Info") }, onClick = { menu = false; Navi.go(Nav.Info) })
                 }
             }
         }

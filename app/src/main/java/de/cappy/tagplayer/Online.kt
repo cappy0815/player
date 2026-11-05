@@ -13,7 +13,7 @@ import java.net.URLEncoder
 import java.text.Normalizer
 import kotlin.math.abs
 
-private const val UA = "Player/0.3 ( https://github.com/cappy0815 )"
+private const val UA = "Player/0.4 ( https://github.com/cappy0815 )"
 
 object Http {
     /** GET, liefert (Statuscode, Bytes). Folgt Weiterleitungen (Cover Art Archive -> archive.org). */
@@ -221,43 +221,152 @@ fun TagData.applyCandidate(c: Candidate, cover: ByteArray?): TagData = copy(
     coverMime = if (cover != null) "image/jpeg" else coverMime
 )
 
-// ---------- Lyrics (LRCLIB) ----------
-data class LyricsResult(val synced: String?, val plain: String?, val instrumental: Boolean) {
+// ---------- Lyrics (LRCLIB, lyrics.ovh) ----------
+data class LyricsResult(val synced: String?, val plain: String?, val instrumental: Boolean, val source: String = "LRCLIB") {
     val best: String? get() = synced?.ifBlank { null } ?: plain?.ifBlank { null }
 }
 
-object LrcLib {
-    suspend fun find(artist: String, title: String, album: String, durationMs: Long): LyricsResult? =
-        withContext(Dispatchers.IO) {
-            if (artist.isBlank() || title.isBlank()) return@withContext null
-            val dur = (durationMs / 1000).toInt()
-            // 1. exakte Abfrage (Dauer ±2 s laut LRCLIB)
-            var u = "https://lrclib.net/api/get?artist_name=${Http.enc(artist)}&track_name=${Http.enc(title)}"
-            if (album.isNotBlank()) u += "&album_name=${Http.enc(album)}"
-            if (dur > 0) u += "&duration=$dur"
-            val (code, b) = try { Http.get(u) } catch (_: Exception) { -1 to null }
-            if (code == 200 && b != null) parse(JSONObject(String(b)))?.let { return@withContext it }
-            // 2. Suche, bester Treffer nach Länge; synchronisierte Texte bevorzugt
-            val s = "https://lrclib.net/api/search?artist_name=${Http.enc(artist)}&track_name=${Http.enc(title)}"
-            val (c2, b2) = try { Http.get(s) } catch (_: Exception) { -1 to null }
-            if (c2 != 200 || b2 == null) return@withContext null
-            val arr = JSONArray(String(b2))
-            var best: JSONObject? = null; var bestScore = Double.MAX_VALUE
-            for (i in 0 until arr.length()) {
-                val o = arr.getJSONObject(i)
-                val d = if (dur > 0) abs(o.optDouble("duration", 0.0) - dur) else 0.0
-                if (dur > 0 && d > 8) continue
-                val score = d - (if (o.optString("syncedLyrics").isNotBlank() && !o.isNull("syncedLyrics")) 3 else 0)
-                if (score < bestScore) { bestScore = score; best = o }
-            }
-            best?.let { parse(it) }
-        }
+/** Ein Treffer der manuellen Suche */
+data class LyricsHit(
+    val source: String, val artist: String, val title: String, val album: String,
+    val durationSec: Double, val synced: String?, val plain: String?
+) {
+    val hasSync get() = !synced.isNullOrBlank()
+    val text get() = synced?.ifBlank { null } ?: plain ?: ""
+}
 
+/**
+ * Bereinigt Titel für die Suche: "(Live)", "- Live at …", "[Remastered 2011]", "feat. X",
+ * "(Radio Edit)", "(Acoustic Version)" usw. entfernen. Gerade Live-Aufnahmen findet man so
+ * oft über die Studioversion.
+ */
+fun cleanTitle(t: String): String {
+    var x = t
+    x = x.replace(Regex("\\s*[(\\[][^)\\]]*[)\\]]"), " ")
+    x = x.replace(Regex("\\s+[-–—]\\s+.*$"), " ")
+    x = x.replace(Regex("\\s+(feat\\.?|ft\\.?|featuring)\\s+.*$", RegexOption.IGNORE_CASE), " ")
+    x = x.replace(Regex("\\b(live|remaster(ed)?|radio edit|single version|album version|acoustic|unplugged)\\b.*$", RegexOption.IGNORE_CASE), " ")
+    return x.trim().replace(Regex("\\s+"), " ").ifBlank { t.trim() }
+}
+
+fun cleanArtist(a: String): String =
+    a.replace(Regex("\\s+(feat\\.?|ft\\.?|featuring|&|x|,|und|and)\\s+.*$", RegexOption.IGNORE_CASE), "").trim().ifBlank { a.trim() }
+
+object LrcLib {
     private fun parse(o: JSONObject): LyricsResult? {
         val synced = if (o.isNull("syncedLyrics")) null else o.optString("syncedLyrics")
         val plain = if (o.isNull("plainLyrics")) null else o.optString("plainLyrics")
         val instr = o.optBoolean("instrumental", false)
         if (synced.isNullOrBlank() && plain.isNullOrBlank() && !instr) return null
-        return LyricsResult(synced, plain, instr)
+        return LyricsResult(synced, plain, instr, "LRCLIB")
+    }
+
+    private fun searchRaw(url: String): JSONArray? {
+        val (c, b) = try { Http.get(url) } catch (_: Exception) { -1 to null }
+        return if (c == 200 && b != null) try { JSONArray(String(b)) } catch (_: Exception) { null } else null
+    }
+
+    /** Bester Treffer: Länge innerhalb [tol] s, synchronisiert bevorzugt */
+    private fun pick(arr: JSONArray?, dur: Int, tol: Int): LyricsResult? {
+        if (arr == null) return null
+        var best: JSONObject? = null; var bestScore = Double.MAX_VALUE
+        for (i in 0 until arr.length()) {
+            val o = arr.getJSONObject(i)
+            val d = if (dur > 0) abs(o.optDouble("duration", 0.0) - dur) else 0.0
+            if (dur > 0 && d > tol) continue
+            val hasSync = !o.isNull("syncedLyrics") && o.optString("syncedLyrics").isNotBlank()
+            val hasAny = hasSync || (!o.isNull("plainLyrics") && o.optString("plainLyrics").isNotBlank())
+            if (!hasAny) continue
+            val score = d - (if (hasSync) 20 else 0)
+            if (score < bestScore) { bestScore = score; best = o }
+        }
+        return best?.let { parse(it) }
+    }
+
+    /**
+     * Automatische Suche in Stufen:
+     * 1. exakt (Interpret, Titel, Album, Länge ±2 s)
+     * 2. Suche Interpret + Titel, Länge ±8 s
+     * 3. bereinigter Titel/Interpret (ohne Live, Remaster, feat. …), Länge ±30 s
+     * 4. Freitextsuche "Interpret Titel", Länge ±30 s
+     */
+    suspend fun find(artist: String, title: String, album: String, durationMs: Long): LyricsResult? =
+        withContext(Dispatchers.IO) {
+            if (title.isBlank()) return@withContext null
+            val dur = (durationMs / 1000).toInt()
+            // Text ohne Zeitangaben nur merken und weitersuchen – synchronisierte Treffer haben Vorrang
+            var plain: LyricsResult? = null
+            fun take(r: LyricsResult?): LyricsResult? {
+                if (r == null) return null
+                if (r.synced != null || r.instrumental) return r
+                if (plain == null) plain = r
+                return null
+            }
+            if (artist.isNotBlank()) {
+                var u = "https://lrclib.net/api/get?artist_name=${Http.enc(artist)}&track_name=${Http.enc(title)}"
+                if (album.isNotBlank()) u += "&album_name=${Http.enc(album)}"
+                if (dur > 0) u += "&duration=$dur"
+                val (code, b) = try { Http.get(u) } catch (_: Exception) { -1 to null }
+                if (code == 200 && b != null) take(parse(JSONObject(String(b))))?.let { return@withContext it }
+                take(pick(searchRaw("https://lrclib.net/api/search?artist_name=${Http.enc(artist)}&track_name=${Http.enc(title)}"), dur, 8))
+                    ?.let { return@withContext it }
+            }
+            val ct = cleanTitle(title); val ca = cleanArtist(artist)
+            if (ca.isNotBlank() && (ct != title || ca != artist))
+                take(pick(searchRaw("https://lrclib.net/api/search?artist_name=${Http.enc(ca)}&track_name=${Http.enc(ct)}"), dur, 30))
+                    ?.let { return@withContext it }
+            take(pick(searchRaw("https://lrclib.net/api/search?q=${Http.enc("$ca $ct".trim())}"), dur, 30))
+                ?.let { return@withContext it }
+            plain
+        }
+
+    /** Freie Suche für die Trefferliste */
+    suspend fun search(query: String): List<LyricsHit> = withContext(Dispatchers.IO) {
+        val arr = searchRaw("https://lrclib.net/api/search?q=${Http.enc(query)}") ?: return@withContext emptyList()
+        (0 until arr.length()).map { arr.getJSONObject(it) }.mapNotNull { o ->
+            val sy = if (o.isNull("syncedLyrics")) null else o.optString("syncedLyrics").ifBlank { null }
+            val pl = if (o.isNull("plainLyrics")) null else o.optString("plainLyrics").ifBlank { null }
+            if (sy == null && pl == null) null
+            else LyricsHit("LRCLIB", o.optString("artistName"), o.optString("trackName"), o.optString("albumName"),
+                o.optDouble("duration", 0.0), sy, pl)
+        }.sortedByDescending { it.hasSync }
+    }
+}
+
+/** Zweite Quelle, nur Text ohne Zeitangaben. Kostenlos, ohne Schlüssel. */
+object LyricsOvh {
+    suspend fun find(artist: String, title: String, strict: Boolean = true): LyricsResult? = withContext(Dispatchers.IO) {
+        if (artist.isBlank() || title.isBlank()) return@withContext null
+        val u = "https://api.lyrics.ovh/v1/${Http.enc(artist).replace("+", "%20")}/${Http.enc(title).replace("+", "%20")}"
+        val (c, b) = try { Http.get(u, 12000) } catch (_: Exception) { -1 to null }
+        if (c != 200 || b == null) return@withContext null
+        val t = try { JSONObject(String(b)).optString("lyrics") } catch (_: Exception) { "" }
+            .replace("\r\n", "\n").replace(Regex("\n{3,}"), "\n\n").trim()
+        // manche Einträge haben keine Zeilenumbrüche (alles in einer Zeile) -> für die Anzeige unbrauchbar
+        if (t.isBlank() || (strict && t.length > 250 && t.count { it == '\n' } < 3)) null
+        else LyricsResult(null, t, false, "lyrics.ovh")
+    }
+}
+
+/** Alle Quellen nacheinander: LRCLIB (mehrstufig), dann lyrics.ovh mit Original- und bereinigtem Titel */
+object LyricsSearch {
+    suspend fun auto(artist: String, title: String, album: String, durationMs: Long): LyricsResult? {
+        val l = try { LrcLib.find(artist, title, album, durationMs) } catch (_: Exception) { null }
+        if (l?.synced != null || l?.instrumental == true) return l
+        val o = LyricsOvh.find(artist, title) ?: run {
+            val ct = cleanTitle(title); val ca = cleanArtist(artist)
+            if (ct != title || ca != artist) LyricsOvh.find(ca, ct) else null
+        }
+        return l ?: o
+    }
+
+    /** Manuelle Suche: Trefferliste aus LRCLIB plus lyrics.ovh */
+    suspend fun manual(artist: String, title: String): List<LyricsHit> {
+        val q = "$artist $title".trim()
+        val hits = ArrayList<LyricsHit>()
+        try { hits += LrcLib.search(q) } catch (_: Exception) {}
+        if (cleanTitle(title) != title) try { hits += LrcLib.search("$artist ${cleanTitle(title)}".trim()) } catch (_: Exception) {}
+        LyricsOvh.find(artist, title, strict = false)?.let { hits += LyricsHit("lyrics.ovh", artist, title, "", 0.0, null, it.plain) }
+        return hits.distinctBy { it.source + it.artist.lowercase() + it.title.lowercase() + it.durationSec.toInt() + it.hasSync }.take(25)
     }
 }

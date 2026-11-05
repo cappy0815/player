@@ -38,6 +38,9 @@ sealed class Nav {
     data class Editor(val songId: Long, val candidates: List<Candidate> = emptyList(), val coverOnly: Boolean = false) : Nav()
     data class Folder(val path: String) : Nav()
     data class PlaylistNav(val id: Long) : Nav()
+    data class LyricsEdit(val songId: Long) : Nav()
+    data class LyricsSync(val songId: Long) : Nav()
+    data object Info : Nav()
 }
 
 /** Kleiner Navigationsstapel */
@@ -135,6 +138,9 @@ fun Root() {
                     is Nav.Editor -> EditorScreen(n.songId, n.candidates, n.coverOnly)
                     is Nav.Folder -> FolderScreen(n.path)
                     is Nav.PlaylistNav -> PlaylistScreen(n.id)
+                    is Nav.LyricsEdit -> LyricsEditScreen(n.songId)
+                    is Nav.LyricsSync -> LyricsSyncScreen(n.songId)
+                    Nav.Info -> InfoScreen()
                 }
             }
             if (Navi.top != Nav.Player && PlayerHub.currentId >= 0) MiniPlayer()

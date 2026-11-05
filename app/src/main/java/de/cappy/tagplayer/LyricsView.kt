@@ -49,11 +49,18 @@ fun LyricsView(
     fontSp: Int,
     modifier: Modifier = Modifier,
     dim: Float = 1f,
-    seekOnTap: Boolean = true
+    seekOnTap: Boolean = true,
+    onEdit: (() -> Unit)? = null
 ) {
     if (lyrics == null) {
         Box(modifier, contentAlignment = Alignment.Center) {
-            Text(status.ifBlank { "Keine Lyrics" }, color = TextDim.copy(alpha = dim), fontSize = 18.sp, textAlign = TextAlign.Center)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(status.ifBlank { "Keine Lyrics" }, color = TextDim.copy(alpha = dim), fontSize = 18.sp, textAlign = TextAlign.Center)
+                if (onEdit != null && !LyricsStore.busy) {
+                    Spacer(Modifier.height(14.dp))
+                    Pill("Selbst suchen oder einfügen", filled = true, onClick = onEdit)
+                }
+            }
         }
         return
     }
@@ -123,6 +130,10 @@ fun LyricsView(
             "Quelle: ${lyrics.source}" + if (!lyrics.synced) " · ohne Zeitangaben, Stelle geschätzt" else "",
             color = TextDim.copy(alpha = .7f * dim), fontSize = 11.sp, textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                .then(if (onEdit != null) Modifier.clickable(onClick = onEdit) else Modifier)
         )
+        if (onEdit != null) Text(if (lyrics.synced) "Bearbeiten · Zeitversatz" else "Bearbeiten · synchronisieren",
+            color = Accent.copy(alpha = .9f * dim), fontSize = 12.sp, textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit).padding(bottom = 6.dp))
     }
 }

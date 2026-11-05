@@ -44,8 +44,10 @@ fun PlayerScreen() {
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Menü", tint = Accent) }
                 DropdownMenu(menu, { menu = false }, containerColor = Surface2) {
+                    DropdownMenuItem({ Text("Zur Playlist") }, onClick = { menu = false; s?.let { PlaylistUi.pending = listOf(it) } })
                     DropdownMenuItem({ Text("Tags bearbeiten") }, onClick = { menu = false; s?.let { Navi.go(Nav.Editor(it.id)) } })
-                    DropdownMenuItem({ Text("Lyrics neu suchen") }, onClick = {
+                    DropdownMenuItem({ Text("Lyrics suchen / bearbeiten") }, onClick = { menu = false; s?.let { Navi.go(Nav.LyricsEdit(it.id)) } })
+                    DropdownMenuItem({ Text("Lyrics automatisch neu suchen") }, onClick = {
                         menu = false
                         s?.let { scope.launch { LyricsStore.forget(ctx, it); LyricsStore.load(ctx, it, true, force = true) } }
                     })
@@ -63,7 +65,8 @@ fun PlayerScreen() {
         HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth()) { page ->
             if (page == 1) {
                 val cur = if (LyricsStore.currentSongId == s.id) LyricsStore.current else null
-                LyricsView(cur, LyricsStore.status, (prefs.stageFontSp * 0.7f).toInt().coerceAtLeast(22), Modifier.fillMaxSize())
+                LyricsView(cur, LyricsStore.status, (prefs.stageFontSp * 0.7f).toInt().coerceAtLeast(22), Modifier.fillMaxSize(),
+                    onEdit = { Navi.go(Nav.LyricsEdit(s.id)) })
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Cover(s, coverSize, 20.dp, px = 800) }
             }

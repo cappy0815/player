@@ -22,7 +22,10 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 - Abgleich nur auf Knopfdruck, nie automatisch im Hintergrund
 
 **Lyrics**
-- Automatische Suche über [LRCLIB](https://lrclib.net), synchronisierte Texte bevorzugt
+- Automatische Suche über [LRCLIB](https://lrclib.net) und [lyrics.ovh](https://lyrics.ovh), synchronisierte Texte bevorzugt
+- Live-, Remaster- und feat.-Titel werden für die Suche bereinigt
+- Manuelle Suche mit Trefferliste, Interpret und Titel frei eingebbar
+- Eigenen Text einfügen und per Tippen synchronisieren, Zeitversatz für synchrone Texte
 - Aktuelle Zeile wird beim Abspielen hervorgehoben und mittig gehalten
 - Zeile antippen springt an diese Stelle im Lied
 - Optional in die MP3 schreiben
@@ -30,7 +33,11 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 
 **Playlists**
 - Anlegen, umbenennen, sortieren, löschen
-- Ganze Ordner, Alben oder Interpreten auf einmal hinzufügen
+- Ganze Ordner, Alben oder Interpreten auf einmal hinzufügen, laufendes Lied direkt aus der Wiedergabe
+
+## Versionen
+
+Siehe [CHANGELOG.md](CHANGELOG.md). In der App unter ⋮ → Info, dort auch „Nach Update suchen“.
 
 ## Installation
 
@@ -48,11 +55,11 @@ Voraussetzung: Android 10 oder neuer.
 
 ## Datenschutz
 
-Die App überträgt nur beim Abgleich bzw. bei der Lyrics-Suche Titel, Interpret, Album und Länge an MusicBrainz, Cover Art Archive und LRCLIB. Keine Konten, keine Werbung, keine Analyse. Einstellungen, Playlists und Lyrics-Zwischenspeicher bleiben auf dem Gerät.
+Die App überträgt nur beim Abgleich bzw. bei der Lyrics-Suche Titel, Interpret, Album und Länge an MusicBrainz, Cover Art Archive, LRCLIB und lyrics.ovh, bei der Update-Prüfung wird GitHub abgefragt. Keine Konten, keine Werbung, keine Analyse. Einstellungen, Playlists und Lyrics-Zwischenspeicher bleiben auf dem Gerät.
 
 ## Selbst bauen
 
-Kotlin, Jetpack Compose, Media3 (ExoPlayer), [jaudiotagger](https://bitbucket.org/ijabz/jaudiotagger).
+Kotlin, Jetpack Compose, Media3 (ExoPlayer), [jaudiotagger](https://bitbucket.org/ijabz/jaudiotagger) (LGPL 2.1). AndroidX, Compose, Media3, Coroutines und Guava stehen unter der Apache License 2.0.
 
 ```bash
 ./gradlew assembleRelease
@@ -63,7 +70,7 @@ Für eine signierte APK `keystore.properties.example` nach `keystore.properties`
 ## Danke
 
 - [MusicBrainz](https://musicbrainz.org) und [Cover Art Archive](https://coverartarchive.org) für die Metadaten und Cover
-- [LRCLIB](https://lrclib.net) für die Lyrics
+- [LRCLIB](https://lrclib.net) und [lyrics.ovh](https://lyrics.ovh) für die Lyrics
 - [jaudiotagger](https://bitbucket.org/ijabz/jaudiotagger) für das Lesen und Schreiben der Tags
 
 ---

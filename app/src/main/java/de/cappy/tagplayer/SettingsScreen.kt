@@ -124,10 +124,7 @@ fun SettingsScreen() {
 
             SectionTitle("Info")
             Card {
-                Text("Player 0.3.1", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                Text("Tags: MusicBrainz · Cover: Cover Art Archive · Lyrics: LRCLIB. " +
-                    "Daten gehen nur beim Abgleich bzw. bei der Lyrics-Suche an diese Dienste (Titel, Interpret, Album, Länge).",
-                    color = TextDim, fontSize = 12.sp, lineHeight = 16.sp)
+                Pill("Info, Versionen & Update", modifier = Modifier.fillMaxWidth()) { Navi.go(Nav.Info) }
             }
             Spacer(Modifier.height(30.dp))
         }

@@ -91,6 +91,10 @@ object LyricsStore {
             // Reihenfolge: synchronisiert vor Klartext. Klartext aus der Datei ist nur Rückfallebene,
             // damit online gefundene Zeitangaben (Highlighting) Vorrang haben.
             var fallback: Lyrics? = null
+            val mf = manualFile(ctx, song.path)
+            if (mf.exists()) {
+                Lyrics.parse(withContext(Dispatchers.IO) { mf.readText() }, "eigene")?.let { current = it; return }
+            }
             if (!force) {
                 val embedded = withContext(Dispatchers.IO) { Tags.readLyrics(song.path) }
                 Lyrics.parse(embedded, "in der Datei")?.let {
@@ -117,18 +121,18 @@ object LyricsStore {
             if (fallback != null) current = fallback   // anzeigen, während online nach Zeitangaben gesucht wird
             else status = "Suche Lyrics …"
             val (title, artist) = MusicBrainz.searchTerms(song, null)
-            val r = try { LrcLib.find(artist, title, song.album, song.durationMs) } catch (e: Exception) { null }
+            val r = try { LyricsSearch.auto(artist, title, song.album, song.durationMs) } catch (e: Exception) { null }
             if (currentSongId != song.id) return
             val synced = r?.synced?.ifBlank { null }
             when {
                 synced != null -> {
-                    current = Lyrics.parse(synced, "LRCLIB (synchron)")
+                    current = Lyrics.parse(synced, "${r.source} (synchron)")
                     status = ""
                     save(ctx, song, synced, prefs.lyricsToTag)
                 }
                 fallback != null -> { current = fallback; save(ctx, song, "#PLAIN", false) }
                 r?.best != null -> {
-                    current = Lyrics.parse(r.best!!, "LRCLIB")
+                    current = Lyrics.parse(r.best!!, r.source)
                     status = ""
                     save(ctx, song, r.best!!, prefs.lyricsToTag)
                 }
@@ -143,9 +147,49 @@ object LyricsStore {
         if (toTag && !text.startsWith("#") && Tags.canEdit(song.path)) try { Tags.writeLyrics(song.path, text) } catch (_: Exception) {}
     }
 
+    /**
+     * Eigene oder ausgewählte Lyrics für einen Titel festlegen (gespeichert im App-Speicher,
+     * optional zusätzlich in der MP3). Gilt sofort für die Anzeige.
+     */
+    private fun manualFile(ctx: Context, path: String) = File(File(ctx.filesDir, "lyrics").apply { mkdirs() }, key(path) + ".manual.lrc")
+
+    /**
+     * Eigene oder ausgewählte Lyrics für einen Titel festlegen. Sie haben Vorrang vor allem anderen
+     * (auch vor Lyrics in der Datei). In die MP3 werden sie nur geschrieben, wenn das in den
+     * Einstellungen eingeschaltet ist.
+     */
+    suspend fun setManual(ctx: Context, song: Song, text: String, source: String) {
+        withContext(Dispatchers.IO) {
+            manualFile(ctx, song.path).writeText(text)
+            if (Prefs.get(ctx).lyricsToTag && Tags.canEdit(song.path)) try { Tags.writeLyrics(song.path, text) } catch (_: Exception) {}
+        }
+        if (currentSongId == song.id || PlayerHub.currentId == song.id) {
+            currentSongId = song.id; current = Lyrics.parse(text, source); status = ""
+        }
+    }
+
+    /** Selbst festgelegte Lyrics wieder entfernen (danach gilt die normale Suche) */
+    fun clearManual(ctx: Context, song: Song) { manualFile(ctx, song.path).delete(); forget(ctx, song) }
+
+    fun hasManual(ctx: Context, song: Song) = manualFile(ctx, song.path).exists()
+
+    /** Text der aktuell angezeigten Lyrics (Vorlage für den Editor) */
+    suspend fun rawFor(ctx: Context, song: Song): String = withContext(Dispatchers.IO) {
+        val m = manualFile(ctx, song.path)
+        if (m.exists()) return@withContext m.readText()
+        val cf = cacheFile(ctx, song.path)
+        val c = if (cf.exists()) cf.readText() else ""
+        val e = try { Tags.readLyrics(song.path) } catch (_: Exception) { "" }
+        when {
+            Lyrics.parse(e, "")?.synced == true -> e
+            !c.startsWith("#") && c.isNotBlank() -> c
+            else -> e
+        }
+    }
+
     /** Zwischenspeicher für einen Titel löschen (z. B. nach Tag-Änderung neu suchen) */
     fun forget(ctx: Context, song: Song) {
-        cacheFile(ctx, song.path).delete()
+        try { cacheFile(ctx, song.path).delete() } catch (_: Exception) {}
         if (currentSongId == song.id) { current = null; currentSongId = -1 }
     }
 }

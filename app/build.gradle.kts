@@ -12,8 +12,8 @@ android {
         applicationId = "de.cappy.tagplayer"
         minSdk = 29
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.4"
     }
     // Signierschlüssel liegt NICHT im Repo. Angaben in keystore.properties
     val ksFile = rootProject.file("keystore.properties")
