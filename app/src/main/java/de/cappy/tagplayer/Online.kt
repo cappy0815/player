@@ -103,16 +103,26 @@ object MusicBrainz {
         return title to artist
     }
 
+    /**
+     * Tag-Suche über den Titel. Der Ordnername gilt als sicherer Hinweis auf das Album:
+     * zuerst wird mit diesem Album gesucht (MusicBrainz-Feld release), erst ohne Treffer ohne Album.
+     */
     suspend fun search(song: Song, tag: TagData?): List<Candidate> {
-        val (title, artist) = searchTerms(song, tag)
+        val (title, artist0) = searchTerms(song, tag)
         if (title.isBlank()) return emptyList()
-        var q = "recording:\"${esc(title)}\""
-        if (artist.isNotBlank()) q += " AND artist:\"${esc(artist)}\""
-        val url = "https://musicbrainz.org/ws/2/recording?fmt=json&limit=10&query=" + Http.enc(q)
-        val (code, body) = throttled(url)
-        if (code != 200 || body == null) throw Exception("MusicBrainz antwortet nicht (Code $code)")
-        val recs = JSONObject(String(body)).optJSONArray("recordings") ?: return emptyList()
-        val albumHint = tag?.album?.ifBlank { null } ?: song.album
+        val hint = AlbumHints.forSong(song, tag)
+        val artist = artist0.ifBlank { hint?.artist ?: "" }
+        var base = "recording:\"${esc(title)}\""
+        if (artist.isNotBlank()) base += " AND artist:\"${esc(artist)}\""
+        suspend fun query(q: String): JSONArray? {
+            val (code, body) = throttled("https://musicbrainz.org/ws/2/recording?fmt=json&limit=10&query=" + Http.enc(q))
+            if (code != 200 || body == null) throw Exception("MusicBrainz antwortet nicht (Code $code)")
+            return JSONObject(String(body)).optJSONArray("recordings")?.takeIf { it.length() > 0 }
+        }
+        var recs: JSONArray? = null
+        if (hint != null && hint.album.isNotBlank()) recs = query(base + " AND release:\"${esc(hint.album)}\"")
+        if (recs == null) recs = query(base) ?: return emptyList()
+        val albumHint = hint?.album ?: tag?.album?.ifBlank { null } ?: song.album
         val out = ArrayList<Candidate>()
         for (i in 0 until recs.length()) {
             val r = recs.getJSONObject(i)
@@ -137,6 +147,13 @@ object MusicBrainz {
                 mbScore = r.optInt("score", 0)
             )
             c.confidence = confidence(c, title, artist, song.durationMs)
+            // Album laut Ordner: passt -> sicherer, passt nicht -> lieber zur Prüfung
+            if (hint?.fromFolder == true) {
+                val a = norm(hint.album); val b = norm(c.album)
+                c.confidence = if (a == b) (c.confidence + 5).coerceAtMost(100)
+                    else if (b.contains(a) || a.contains(b)) c.confidence
+                    else (c.confidence - 15).coerceAtLeast(0)
+            }
             out += c
         }
         return out.sortedByDescending { it.confidence }.distinctBy { it.recordingId }.take(8)

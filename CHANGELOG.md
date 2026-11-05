@@ -3,6 +3,7 @@
 ## 0.5
 - Wiedergabeliste: ansehen, springen, sortieren, entfernen, als Playlist speichern
 - Langdruck-Menü für Lieder, Alben, Interpreten, Ordner und Playlists
+- Tag-Suche nutzt zuerst den Ordnernamen als Albumtitel (wie die Cover-Prüfung)
 - „Als Nächstes spielen“ und „An Wiedergabeliste anhängen“
 - Knopf „Anhängen“ in Album-, Interpreten- und Playlist-Ansicht
 - Untertitel „tag it · play it · sing it“

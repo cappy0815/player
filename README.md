@@ -20,9 +20,10 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 - Tags direkt in der MP3 bearbeiten: Titel, Interpret, Album, Album-Interpret, Jahr, Genre, Titelnummer, CD, Cover, Lyrics
 - Vorher/Nachher-Vorschau vor dem Speichern
 - Online-Abgleich über [MusicBrainz](https://musicbrainz.org), Cover vom [Cover Art Archive](https://coverartarchive.org)
+- Der Name des Speicherordners („Interpret - Album“ oder „Album“) gilt als sicherer Hinweis auf das Album, für Tags und Cover
 - Prüfung für einzelne Titel, Alben, Interpreten, ganze Ordner oder Playlists
 - Sichere Treffer (Schwelle einstellbar) werden automatisch gespeichert, unsichere landen in „Prüfen“
-- Cover-Prüfung getrennt von den Tags: nur fehlende Cover ergänzen oder vorhandene ersetzen; der Name des Speicherordners („Interpret - Album“ oder „Album“) dient als erster Hinweis
+- Cover-Prüfung getrennt von den Tags: nur fehlende Cover ergänzen oder vorhandene ersetzen
 - Abgleich nur auf Knopfdruck, nie automatisch im Hintergrund
 
 **Lyrics**
