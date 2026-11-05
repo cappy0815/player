@@ -26,6 +26,13 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.6" to listOf(
+        "Tag- und Cover-Suche zusätzlich über Deezer und iTunes (mit Genre und großen Covern)",
+        "Treffer aus mehreren Quellen bestätigen sich gegenseitig",
+        "Fehlt zum besten Treffer ein Bild, wird automatisch das nächste sichere Cover genommen",
+        "Quelle steht in der Trefferliste",
+        "Update-Prüfung über die Projektseite, täglich automatisch, „⬆ Update“-Knopf"
+    ),
     "0.5" to listOf(
         "Wiedergabeliste: ansehen, springen, sortieren, entfernen, als Playlist speichern",
         "Langdruck-Menü für Lieder, Alben, Interpreten, Ordner und Playlists",
@@ -91,10 +98,6 @@ fun openUrl(ctx: Context, url: String) {
 fun InfoScreen() {
     val ctx = LocalContext.current
     val version = remember { appVersion(ctx) }
-    val scope = rememberCoroutineScope()
-    var checking by remember { mutableStateOf(false) }
-    var update by remember { mutableStateOf<String?>(null) }
-    var updateUrl by remember { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxSize()) {
         TopBar("Info", onBack = { Navi.back() })
@@ -107,40 +110,11 @@ fun InfoScreen() {
                 Spacer(Modifier.height(6.dp))
                 Text("MP3-Player mit Tag-Editor, Online-Abgleich und mitlaufenden Lyrics.", color = AccentSoft, fontSize = 14.sp)
                 Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Pill(if (checking) "Prüfe …" else "Nach Update suchen", filled = true, enabled = !checking, modifier = Modifier.weight(1f)) {
-                        checking = true; update = null; updateUrl = null
-                        scope.launch {
-                            val r = withContext(Dispatchers.IO) {
-                                try {
-                                    val (c, b) = Http.get("https://api.github.com/repos/cappy0815/player/releases/latest")
-                                    if (c == 200 && b != null) JSONObject(String(b)) else null
-                                } catch (_: Exception) { null }
-                            }
-                            checking = false
-                            if (r == null) { update = "GitHub nicht erreichbar"; return@launch }
-                            val tag = r.optString("tag_name").trimStart('v', 'V')
-                            if (newerThan(tag, version)) {
-                                update = "Version $tag ist verfügbar"
-                                val assets = r.optJSONArray("assets")
-                                updateUrl = (0 until (assets?.length() ?: 0)).map { assets!!.getJSONObject(it) }
-                                    .firstOrNull { it.optString("name").endsWith(".apk") }?.optString("browser_download_url")
-                                    ?: r.optString("html_url")
-                            } else update = "Du hast die aktuelle Version"
-                        }
-                    }
-                    Pill("GitHub", modifier = Modifier.weight(1f)) { openUrl(ctx, GITHUB_URL) }
-                }
-                if (checking) { Spacer(Modifier.height(8.dp)); CircularProgressIndicator(Modifier.size(20.dp), color = Accent, strokeWidth = 2.dp) }
-                update?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = if (updateUrl != null) Good else TextDim, fontSize = 14.sp)
-                    updateUrl?.let { u ->
-                        Spacer(Modifier.height(8.dp))
-                        Pill("Herunterladen", filled = true, modifier = Modifier.fillMaxWidth()) { openUrl(ctx, u) }
-                    }
-                }
+                Pill("GitHub", modifier = Modifier.fillMaxWidth()) { openUrl(ctx, GITHUB_URL) }
             }
+
+            SectionTitle("Updates")
+            Card { UpdateBlock() }
 
             SectionTitle("Neu in dieser Version")
             Card {
@@ -154,6 +128,8 @@ fun InfoScreen() {
             SectionTitle("Datenquellen")
             Card {
                 Line("MusicBrainz", "Tags (Titel, Interpret, Album, Jahr, Nummer)")
+                Line("Deezer", "Tags und Cover")
+                Line("Apple iTunes Search", "Tags, Genre und Cover")
                 Line("Cover Art Archive", "Albumcover")
                 Line("LRCLIB", "Lyrics mit und ohne Zeitangaben")
                 Line("lyrics.ovh", "Lyrics ohne Zeitangaben (zweite Quelle)")
@@ -162,7 +138,7 @@ fun InfoScreen() {
 
             SectionTitle("Datenschutz")
             Card {
-                Text("Daten gehen nur beim Abgleich, bei der Cover- und Lyrics-Suche und bei der Update-Prüfung an die genannten Dienste bzw. GitHub: " +
+                Text("Daten gehen nur beim Abgleich, bei der Cover- und Lyrics-Suche an die genannten Dienste und bei der Update-Prüfung an cappy0815.github.io bzw. GitHub: " +
                     "Titel, Interpret, Album und Länge. Keine Konten, keine Werbung, keine Analyse. Einstellungen, Playlists und Lyrics bleiben auf dem Gerät.",
                     color = TextDim, fontSize = 13.sp, lineHeight = 18.sp)
             }

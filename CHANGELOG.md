@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6
+- Tag- und Cover-Suche zusätzlich über Deezer und iTunes (mit Genre und großen Covern)
+- Treffer aus mehreren Quellen bestätigen sich gegenseitig
+- Fehlt zum besten Treffer ein Bild, wird automatisch das nächste sichere Cover genommen
+- Quelle steht in der Trefferliste
+- Update-Prüfung über die Projektseite, täglich automatisch, „⬆ Update“-Knopf
+
 ## 0.5
 - Wiedergabeliste: ansehen, springen, sortieren, entfernen, als Playlist speichern
 - Langdruck-Menü für Lieder, Alben, Interpreten, Ordner und Playlists

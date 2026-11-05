@@ -65,6 +65,9 @@ fun LibraryScreen() {
 
     Column(Modifier.fillMaxSize()) {
         TopBar("Player", tagline = TAGLINE) {
+            if (Update.available(ctx)) TextButton(onClick = { Update.showDialog = true }) {
+                Text("⬆ Update", color = Accent, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            }
             IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
                 Icon(if (searching) Icons.Default.Close else Icons.Default.Search, "Suche", tint = Accent)
             }

@@ -124,6 +124,9 @@ fun SettingsScreen() {
                 }
             }
 
+            SectionTitle("Updates")
+            Card { UpdateBlock() }
+
             SectionTitle("Info")
             Card {
                 Pill("Info, Versionen & Update", modifier = Modifier.fillMaxWidth()) { Navi.go(Nav.Info) }

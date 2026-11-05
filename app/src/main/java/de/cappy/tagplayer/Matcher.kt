@@ -65,17 +65,22 @@ object Matcher {
             it.state = MatchState.RUNNING
             try {
                 val old = withContext(Dispatchers.IO) { Tags.read(it.song.path) }
-                val cands = MusicBrainz.search(it.song, old)
+                val cands = TagSearch.search(it.song, old, prefs.threshold, thorough = false)
                 it.candidates = cands
-                val best = cands.firstOrNull()
+                var best = cands.firstOrNull()
                 when {
                     best == null -> { it.state = MatchState.NONE; it.info = "Kein Treffer" }
                     best.confidence < prefs.threshold || !autoApply -> {
-                        it.state = MatchState.REVIEW; it.info = "${best.confidence} %  ·  ${best.artist} – ${best.title}"
+                        it.state = MatchState.REVIEW; it.info = "${best.confidence} %  ·  ${best.artist} – ${best.title}  ·  ${best.source}"
                     }
                     else -> {
+                        best = TagSearch.enrich(best)
                         val wantCover = prefs.coverOnline && !(prefs.keepExistingCover && old.cover != null)
-                        val cover = if (wantCover) coverCache.getOrPut(best.releaseId) { MusicBrainz.cover(best) } else null
+                        // Cover: zuerst vom Treffer selbst, sonst aus einem anderen sicheren Treffer zum selben Album
+                        val cover = if (!wantCover) null else coverCache.getOrPut(best.source + best.releaseId) {
+                            Covers.forCandidate(best) ?: Covers.firstAvailable(
+                                cands.filter { c -> c !== best && norm(c.album) == norm(best.album) }, prefs.threshold)?.second
+                        }
                         val neu = old.applyCandidate(best, cover)
                         val diff = neu.diff(old)
                         if (diff.isEmpty()) {
@@ -84,7 +89,7 @@ object Matcher {
                             withContext(Dispatchers.IO) { Tags.write(it.song.path, neu, writeCover = cover != null) }
                             changed += it.song.path
                             it.state = MatchState.APPLIED
-                            it.info = "${best.confidence} %  ·  ${diff.joinToString { d -> d.first }}"
+                            it.info = "${best.confidence} %  ·  ${best.source}  ·  ${diff.joinToString { d -> d.first }}"
                         }
                     }
                 }
@@ -120,23 +125,26 @@ object Matcher {
                 // a) Album-Suche über den Ordnernamen bzw. das Album-Tag
                 val files = if (key.startsWith("f:")) java.io.File(key.removePrefix("f:")).walkTopDown().maxDepth(2)
                     .count { f -> f.isFile && f.extension.lowercase() == "mp3" } else 0
-                var cands = if (g.hint != null) MusicBrainz.searchRelease(g.hint, files) else emptyList()
+                var cands = if (g.hint != null) AlbumSearch.search(g.hint, files, prefs.threshold, thorough = false) else emptyList()
                 // b) zusätzlich über den Titel, falls die Album-Suche nichts Sicheres findet
                 if ((cands.firstOrNull()?.confidence ?: 0) < prefs.threshold) {
                     val old = withContext(Dispatchers.IO) { Tags.read(first.song.path) }
-                    cands = (cands + MusicBrainz.search(first.song, old)).sortedByDescending { it.confidence }
-                        .distinctBy { it.releaseGroupId.ifBlank { it.releaseId } }
+                    cands = (cands + TagSearch.search(first.song, old, prefs.threshold, thorough = true))
+                        .sortedByDescending { it.confidence }
+                        .distinctBy { it.source + ":" + it.releaseId }
                 }
                 group.forEach { it.candidates = cands }
-                val best = cands.firstOrNull()
+                val top = cands.firstOrNull()
                 val via = if (g.hint?.fromFolder == true) "Ordner „${g.hint.label}“" else "Album-Tag"
-                if (best == null) { group.forEach { it.state = MatchState.NONE; it.info = "Kein Treffer ($via)" }; continue }
-                if (best.confidence < prefs.threshold || !autoApply) {
-                    group.forEach { it.state = MatchState.REVIEW; it.info = "${best.confidence} %  ·  ${best.album} (${best.artist})  ·  $via" }
+                if (top == null) { group.forEach { it.state = MatchState.NONE; it.info = "Kein Treffer ($via)" }; continue }
+                if (top.confidence < prefs.threshold || !autoApply) {
+                    group.forEach { it.state = MatchState.REVIEW; it.info = "${top.confidence} %  ·  ${top.album} (${top.artist})  ·  ${top.source}  ·  $via" }
                     continue
                 }
-                val cover = MusicBrainz.cover(best)
-                if (cover == null) { group.forEach { it.state = MatchState.NONE; it.info = "Kein Cover für „${best.album}“ im Archiv" }; continue }
+                // erstes sicheres Ergebnis, zu dem es auch wirklich ein Bild gibt
+                val found = Covers.firstAvailable(cands, prefs.threshold)
+                if (found == null) { group.forEach { it.state = MatchState.NONE; it.info = "Kein Bild zu „${top.album}“ gefunden ($via)" }; continue }
+                val (best, cover) = found
                 for (it in group) {
                     try {
                         withContext(Dispatchers.IO) {
@@ -145,7 +153,7 @@ object Matcher {
                         }
                         changed += it.song.path
                         it.state = MatchState.APPLIED
-                        it.info = "${best.confidence} %  ·  Cover von „${best.album}“  ·  $via"
+                        it.info = "${best.confidence} %  ·  Cover von „${best.album}“ (${best.source})  ·  $via"
                     } catch (e: Exception) { it.state = MatchState.ERROR; it.info = e.message ?: e.javaClass.simpleName }
                 }
             } catch (e: CancellationException) { throw e

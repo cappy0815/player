@@ -86,11 +86,11 @@ fun EditorScreen(songId: Long, preset: List<Candidate>, coverOnly: Boolean = fal
                         try {
                             cands = if (coverOnly) {
                                 val h = AlbumHints.forSong(song, d)
-                                val byAlbum = if (h != null) MusicBrainz.searchRelease(h, 0) else emptyList()
+                                val byAlbum = if (h != null) AlbumSearch.search(h, 0, prefs.threshold, thorough = true) else emptyList()
                                 if (h != null) searchInfo = "Gesucht mit " + (if (h.fromFolder) "Ordner" else "Album-Tag") + " „${h.label}“"
-                                (byAlbum + MusicBrainz.search(song, d)).sortedByDescending { it.confidence }
-                                    .distinctBy { it.releaseGroupId.ifBlank { it.releaseId } }
-                            } else MusicBrainz.search(song, d)
+                                (byAlbum + TagSearch.search(song, d, prefs.threshold, thorough = false)).sortedByDescending { it.confidence }
+                                    .distinctBy { it.source + ":" + it.releaseId }
+                            } else TagSearch.search(song, d, prefs.threshold, thorough = true)
                             if (cands.isEmpty()) searchInfo += (if (searchInfo.isNotBlank()) "\n" else "") + "Kein Treffer. Titel/Interpret von Hand eintragen und erneut suchen."
                         } catch (e: Exception) { searchInfo = e.message ?: "Fehler" }
                         searching = false
@@ -113,13 +113,14 @@ fun EditorScreen(songId: Long, preset: List<Candidate>, coverOnly: Boolean = fal
                     applying = true
                     scope.launch {
                         // Cover laden dauert je nach Archiv einige Sekunden -> Anzeige "Lade Cover …"
-                        val cover = try { if (prefs.coverOnline || coverOnly) MusicBrainz.cover(c) else null } finally { applying = false }
+                        val full = if (coverOnly) c else TagSearch.enrich(c)
+                        val cover = try { if (prefs.coverOnline || coverOnly) Covers.forCandidate(full) else null } finally { applying = false }
                         if (coverOnly) {
                             // nur das Cover übernehmen, Tags bleiben
                             if (cover != null) { d = d.copy(cover = cover, coverMime = "image/jpeg"); coverChanged = true; cands = emptyList() }
-                            Toast.makeText(ctx, if (cover != null) "Cover übernommen – speichern" else "Für diese Veröffentlichung gibt es kein Cover im Archiv", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(ctx, if (cover != null) "Cover übernommen – speichern" else "Zu diesem Treffer gibt es kein Bild – anderen wählen", Toast.LENGTH_SHORT).show()
                         } else {
-                            d = d.applyCandidate(c, cover)
+                            d = d.applyCandidate(full, cover)
                             if (cover != null) coverChanged = true
                             cands = emptyList()
                             Toast.makeText(ctx, "Übernommen – prüfen und speichern", Toast.LENGTH_SHORT).show()
@@ -235,7 +236,7 @@ fun CandidateRow(c: Candidate, threshold: Int, onPick: () -> Unit) {
         Text("${c.confidence}%", color = col, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(52.dp))
         Column(Modifier.weight(1f)) {
             Text("${c.artist} – ${c.title}", color = Color.White, fontSize = 14.sp)
-            Text(listOfNotNull(c.album.ifBlank { null }, c.year.ifBlank { null },
+            Text(listOfNotNull(c.source, c.album.ifBlank { null }, c.year.ifBlank { null },
                 c.track.ifBlank { null }?.let { "Nr. $it" + if (c.trackTotal.isNotBlank()) "/${c.trackTotal}" else "" },
                 if (c.lengthMs > 0) fmtTime(c.lengthMs) else null).joinToString(" · "),
                 color = TextDim, fontSize = 12.sp)

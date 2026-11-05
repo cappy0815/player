@@ -105,6 +105,8 @@ fun Root() {
         if (!granted) launcher.launch(perms.toTypedArray())
     }
     LaunchedEffect(Unit) { Playlists.load(ctx) }
+    // Update-Prüfung höchstens einmal pro Tag beim Start
+    LaunchedEffect(Unit) { Update.load(ctx); if (Update.due()) Update.check(ctx) }
     LaunchedEffect(granted) { if (granted && !Library.loadedOnce) Library.load(ctx) }
 
     Box(Modifier.fillMaxSize().background(Bg)) {
@@ -148,6 +150,7 @@ fun Root() {
             if (Navi.top != Nav.Player && PlayerHub.currentId >= 0) MiniPlayer()
         }
         AddToPlaylistDialog()
+        UpdateDialog()
     }
 }
 

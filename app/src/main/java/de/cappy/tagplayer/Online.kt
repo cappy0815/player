@@ -13,7 +13,7 @@ import java.net.URLEncoder
 import java.text.Normalizer
 import kotlin.math.abs
 
-private const val UA = "Player/0.5 ( https://github.com/cappy0815 )"
+private const val UA = "Player/0.6 ( https://github.com/cappy0815 )"
 
 object Http {
     /** GET, liefert (Statuscode, Bytes). Folgt Weiterleitungen (Cover Art Archive -> archive.org). */
@@ -65,8 +65,64 @@ data class Candidate(
     val disc: String,
     val lengthMs: Long,
     val mbScore: Int,
-    var confidence: Int = 0
+    var confidence: Int = 0,
+    /** Quelle: MusicBrainz, Deezer oder iTunes */
+    val source: String = "MusicBrainz",
+    /** direkter Cover-Link (Deezer/iTunes); leer = Cover Art Archive */
+    val coverUrl: String = "",
+    val genre: String = "",
+    /** Kennung bei der Quelle (z. B. Deezer-Track), für Nachladen von Nummer/Jahr */
+    val extId: String = ""
 )
+
+/** Gemeinsame Trefferquote 0–100: Titel, Interpret und Länge vergleichen */
+fun scoreTrack(base: Int, c: Candidate, title: String, artist: String, durMs: Long): Int {
+    var s = base
+    val nt = norm(title); val nc = norm(c.title)
+    // Titel wiegt am meisten: ein anderer Titel darf nie vor dem richtigen landen
+    if (nt != nc) s -= if (nt.isNotEmpty() && (nc.contains(nt) || nt.contains(nc))) 8 else 45
+    if (artist.isNotBlank()) {
+        val na = norm(artist); val nca = norm(c.artist)
+        if (na != nca) s -= if (nca.contains(na) || na.contains(nca)) 5 else 30
+    } else s -= 10
+    // Länge: Live-, Radio- und Album-Versionen weichen ab -> deutlich, aber nicht entscheidend
+    if (durMs > 0 && c.lengthMs > 0) {
+        val d = abs(durMs - c.lengthMs)
+        s -= when { d <= 3000 -> 0; d <= 7000 -> 5; d <= 15000 -> 12; else -> 25 }
+    } else s -= 5
+    return s.coerceIn(0, 100)
+}
+
+/** Album laut Ordner: passt -> sicherer, passt nicht -> lieber zur Prüfung */
+fun folderAdjust(c: Candidate, hint: AlbumHint?) {
+    if (hint?.fromFolder != true) return
+    val a = norm(hint.album); val b = norm(c.album)
+    c.confidence = if (a == b) (c.confidence + 5).coerceAtMost(100)
+        else if (b.contains(a) || a.contains(b)) c.confidence
+        else (c.confidence - 15).coerceAtLeast(0)
+}
+
+/** Trefferquote für Alben (Cover-Prüfung): Albumtitel und Interpret vergleichen */
+fun scoreAlbum(base: Int, hint: AlbumHint, title: String, artist: String): Int {
+    var conf = base
+    val na = norm(hint.album); val nt = norm(title)
+    if (na != nt) conf -= if (nt.contains(na) || na.contains(nt)) 8 else 30
+    if (hint.artist.isNotBlank()) {
+        val x = norm(hint.artist); val y = norm(artist)
+        if (x != y) conf -= if (y.contains(x) || x.contains(y)) 5 else 20
+    }
+    return conf.coerceIn(0, 100)
+}
+
+/** "(Remastered 2016)", " - 2011 Remaster" usw. entfernen (Deezer/iTunes hängen das an) */
+fun cleanRemaster(t: String): String =
+    t.replace(Regex("\\s*[(\\[][^)\\]]*\\bremaster(ed)?\\b[^)\\]]*[)\\]]", RegexOption.IGNORE_CASE), "")
+        .replace(Regex("\\s+[-–]\\s+[^-–]*\\bremaster(ed)?\\b.*$", RegexOption.IGNORE_CASE), "").trim().ifBlank { t }
+
+/** " - EP", " (Single)", Remaster-Zusätze vom Albumnamen entfernen (Deezer/iTunes hängen das an) */
+fun cleanAlbum(a: String): String = cleanRemaster(a).let { a ->
+    a.replace(Regex("\\s*[-–]\\s*(EP|Single)\\s*$", RegexOption.IGNORE_CASE), "")
+        .replace(Regex("\\s*[(\\[](EP|Single)[)\\]]\\s*$", RegexOption.IGNORE_CASE), "").trim() }
 
 object MusicBrainz {
     // MusicBrainz erlaubt im Schnitt 1 Anfrage pro Sekunde
@@ -147,13 +203,7 @@ object MusicBrainz {
                 mbScore = r.optInt("score", 0)
             )
             c.confidence = confidence(c, title, artist, song.durationMs)
-            // Album laut Ordner: passt -> sicherer, passt nicht -> lieber zur Prüfung
-            if (hint?.fromFolder == true) {
-                val a = norm(hint.album); val b = norm(c.album)
-                c.confidence = if (a == b) (c.confidence + 5).coerceAtMost(100)
-                    else if (b.contains(a) || a.contains(b)) c.confidence
-                    else (c.confidence - 15).coerceAtLeast(0)
-            }
+            folderAdjust(c, hint)
             out += c
         }
         return out.sortedByDescending { it.confidence }.distinctBy { it.recordingId }.take(8)
@@ -197,20 +247,8 @@ object MusicBrainz {
     }
 
     /** Eigene Trefferquote 0–100: MusicBrainz-Score, korrigiert um Titel-, Interpret- und Längenvergleich */
-    private fun confidence(c: Candidate, title: String, artist: String, durMs: Long): Int {
-        var s = c.mbScore
-        val nt = norm(title); val nc = norm(c.title)
-        if (nt != nc) s -= if (nt.isNotEmpty() && (nc.contains(nt) || nt.contains(nc))) 8 else 25
-        if (artist.isNotBlank()) {
-            val na = norm(artist); val nca = norm(c.artist)
-            if (na != nca) s -= if (nca.contains(na) || na.contains(nca)) 5 else 25
-        } else s -= 10
-        if (durMs > 0 && c.lengthMs > 0) {
-            val d = abs(durMs - c.lengthMs)
-            s -= when { d <= 3000 -> 0; d <= 7000 -> 8; d <= 15000 -> 20; else -> 40 }
-        } else s -= 5
-        return s.coerceIn(0, 100)
-    }
+    private fun confidence(c: Candidate, title: String, artist: String, durMs: Long): Int =
+        scoreTrack(c.mbScore, c, title, artist, durMs)
 
     /**
      * Album-Suche (Veröffentlichungen) für die Cover-Prüfung, z. B. mit dem Ordnernamen.
@@ -229,13 +267,7 @@ object MusicBrainz {
             val r = rels.getJSONObject(i)
             val rg = r.optJSONObject("release-group")?.optString("id") ?: ""
             val artistName = credit(r.optJSONArray("artist-credit"))
-            var conf = r.optInt("score", 0)
-            val na = norm(hint.album); val nt = norm(r.optString("title"))
-            if (na != nt) conf -= if (nt.contains(na) || na.contains(nt)) 8 else 30
-            if (hint.artist.isNotBlank()) {
-                val x = norm(hint.artist); val y = norm(artistName)
-                if (x != y) conf -= if (y.contains(x) || x.contains(y)) 5 else 20
-            }
+            val conf = scoreAlbum(r.optInt("score", 0), hint, r.optString("title"), artistName)
             // Auswahl innerhalb der Gruppe
             var pref = 0
             if (r.optString("status") == "Official") pref += 50
@@ -248,7 +280,7 @@ object MusicBrainz {
                 title = r.optString("title"), artist = artistName, album = r.optString("title"),
                 albumArtist = artistName, year = d.take(4), track = "",
                 trackTotal = r.optInt("track-count", 0).takeIf { it > 0 }?.toString() ?: "", disc = "",
-                lengthMs = 0, mbScore = r.optInt("score", 0), confidence = conf.coerceIn(0, 100)
+                lengthMs = 0, mbScore = r.optInt("score", 0), confidence = conf
             )
             val key = rg.ifBlank { c.releaseId }
             val old = byGroup[key]
@@ -260,6 +292,7 @@ object MusicBrainz {
 
     /** Cover vom Cover Art Archive (500 px), zuerst Veröffentlichung, dann Release-Gruppe */
     suspend fun cover(c: Candidate): ByteArray? = withContext(Dispatchers.IO) {
+        if (c.releaseId.isBlank() || c.source != "MusicBrainz") return@withContext null
         val urls = listOf("https://coverartarchive.org/release/${c.releaseId}/front-500") +
             if (c.releaseGroupId.isNotBlank()) listOf("https://coverartarchive.org/release-group/${c.releaseGroupId}/front-500") else emptyList()
         for (u in urls) {
@@ -280,6 +313,7 @@ fun TagData.applyCandidate(c: Candidate, cover: ByteArray?): TagData = copy(
     track = c.track.ifBlank { track },
     trackTotal = c.trackTotal.ifBlank { trackTotal },
     disc = c.disc.ifBlank { disc },
+    genre = c.genre.ifBlank { genre },
     cover = cover ?: this.cover,
     coverMime = if (cover != null) "image/jpeg" else coverMime
 )
