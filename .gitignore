@@ -1,0 +1,17 @@
+# Build
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+
+# Lokal / IDE
+local.properties
+.idea/
+*.iml
+.DS_Store
+
+# Signaturschlüssel – NIE ins Repo
+keystore.properties
+*.jks
+*.keystore
