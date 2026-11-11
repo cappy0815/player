@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Langdruck auf das App-Icon -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="resume" android:enabled="true" android:icon="@drawable/sc_play"
+        android:shortcutShortLabel="@string/sc_resume" android:shortcutLongLabel="@string/sc_resume_long">
+        <intent android:action="de.cappy.tagplayer.RESUME"
+            android:targetPackage="de.cappy.tagplayer" android:targetClass="de.cappy.tagplayer.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="shuffle" android:enabled="true" android:icon="@drawable/sc_shuffle"
+        android:shortcutShortLabel="@string/sc_shuffle" android:shortcutLongLabel="@string/sc_shuffle_long">
+        <intent android:action="de.cappy.tagplayer.SHUFFLE"
+            android:targetPackage="de.cappy.tagplayer" android:targetClass="de.cappy.tagplayer.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="search" android:enabled="true" android:icon="@drawable/sc_search"
+        android:shortcutShortLabel="@string/sc_search" android:shortcutLongLabel="@string/sc_search_long">
+        <intent android:action="de.cappy.tagplayer.SEARCH"
+            android:targetPackage="de.cappy.tagplayer" android:targetClass="de.cappy.tagplayer.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="lyrics" android:enabled="true" android:icon="@drawable/sc_lyrics"
+        android:shortcutShortLabel="@string/sc_lyrics" android:shortcutLongLabel="@string/sc_lyrics_long">
+        <intent android:action="de.cappy.tagplayer.LYRICS"
+            android:targetPackage="de.cappy.tagplayer" android:targetClass="de.cappy.tagplayer.MainActivity" />
+    </shortcut>
+</shortcuts>

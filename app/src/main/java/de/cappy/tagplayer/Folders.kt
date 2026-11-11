@@ -74,7 +74,7 @@ fun CheckButtons(label: String, songs: List<Song>, playlistButton: Boolean = tru
 fun FolderList(all: List<Song>, dir: String, header: (@Composable () -> Unit)? = null) {
     val subs = Folders.subfolders(all, dir)
     val direct = Folders.songsIn(all, dir)
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxSize(), state = rememberListState("folder:$dir")) {
         if (header != null) item { header() }
         items(subs, key = { "d:" + it.first }) { (path, count) ->
             var menu by remember { mutableStateOf(false) }

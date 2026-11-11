@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8
+- Langdruck aufs App-Icon: Weiterhören, Zufallsmix, Suchen, Lyrics-Vollbild
+- Listen merken sich die Position: zurück aus Ordner, Album oder Menü landet an derselben Stelle statt wieder bei A
+- Zuletzt gespielte Liste und Position bleiben erhalten (Weiterhören, Play-Taste und Android Auto nach Neustart)
+
 ## 0.7
 - Android Auto: Playlists, Alben, Interpreten, Ordner, Alle Titel, Zufallsmix und Suche im Auto
 - Ordnerregel: in einem Album-Ordner bekommen alle Dateien dasselbe Album und dasselbe Cover

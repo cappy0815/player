@@ -200,6 +200,15 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
                                  mediaItems: MutableList<MediaItem>): ListenableFuture<MutableList<MediaItem>> =
         scope.future { ensureLoaded(); resolve(mediaItems).first.toMutableList() }
 
+    /** Systemweites „Fortsetzen“ (Kopfhörer-/Auto-Taste, Android Auto) nach einem Neustart */
+    override fun onPlaybackResumption(mediaSession: MediaSession, controller: MediaSession.ControllerInfo
+    ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
+        ensureLoaded()
+        val r = Resume.load(ctx)
+        if (r == null) MediaSession.MediaItemsWithStartPosition(songsOf("mix").map { songMediaItem(it) }, 0, 0L)
+        else MediaSession.MediaItemsWithStartPosition(r.first.map { songMediaItem(it) }, r.second, r.third)
+    }
+
     override fun onSetMediaItems(mediaSession: MediaSession, controller: MediaSession.ControllerInfo,
                                  mediaItems: MutableList<MediaItem>, startIndex: Int, startPositionMs: Long
     ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {

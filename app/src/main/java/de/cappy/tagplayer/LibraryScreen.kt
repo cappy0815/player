@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +61,11 @@ fun LibraryScreen() {
     LaunchedEffect(pager.currentPage) { LibraryUi.page = pager.currentPage }
     var query by remember { mutableStateOf("") }
     var searching by remember { mutableStateOf(false) }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(LibraryUi.openSearch) {
+        if (LibraryUi.openSearch) { LibraryUi.openSearch = false; searching = true; pager.scrollToPage(0)
+            kotlinx.coroutines.delay(150); try { focus.requestFocus() } catch (_: Exception) {} }
+    }
     var menu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -91,7 +97,7 @@ fun LibraryScreen() {
         if (searching) {
             OutlinedTextField(
                 query, { query = it }, singleLine = true, placeholder = { Text("Titel, Interpret, Album, Datei") },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).focusRequester(focus),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Accent, cursorColor = Accent)
             )
@@ -121,10 +127,10 @@ fun LibraryScreen() {
         // Wischen zwischen den Reitern
         HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 0) { page ->
         when (page) {
-            0 -> SongList(songs)
+            0 -> SongList(songs, key = "lib:titles:$q")
             1 -> {
                 val albums = songs.groupBy { it.albumId }.values.sortedBy { it.first().album.lowercase() }
-                LazyColumn(Modifier.fillMaxSize()) {
+                LazyColumn(Modifier.fillMaxSize(), state = rememberListState("lib:albums:$q")) {
                     items(albums, key = { it.first().albumId }) { list ->
                         val s = list.first()
                         GroupRow(s, s.album.ifBlank { "Unbekanntes Album" },
@@ -148,7 +154,7 @@ fun LibraryScreen() {
             4 -> PlaylistTab()
             else -> {
                 val artists = songs.groupBy { it.artist }.entries.sortedBy { it.key.lowercase() }
-                LazyColumn(Modifier.fillMaxSize()) {
+                LazyColumn(Modifier.fillMaxSize(), state = rememberListState("lib:artists:$q")) {
                     items(artists, key = { "a:" + it.key }) { (name, list) ->
                         GroupRow(list.first(), name.ifBlank { "Unbekannter Interpret" },
                             "${list.map { it.album }.distinct().size} Alben · ${list.size} Titel", songs = { list }) { Navi.go(Nav.Artist(name)) }
@@ -160,7 +166,11 @@ fun LibraryScreen() {
     }
 }
 
-object LibraryUi { var page by mutableIntStateOf(0) }
+object LibraryUi {
+    var page by mutableIntStateOf(0)
+    /** vom App-Icon „Suchen“ gesetzt */
+    var openSearch by mutableStateOf(false)
+}
 
 @Composable
 fun rememberSaveableInt(v: Int) = androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(v) }
@@ -185,8 +195,8 @@ fun GroupRow(cover: Song, title: String, sub: String, songs: (() -> List<Song>)?
 }
 
 @Composable
-fun SongList(songs: List<Song>, header: (@Composable () -> Unit)? = null) {
-    LazyColumn(Modifier.fillMaxSize()) {
+fun SongList(songs: List<Song>, key: String, header: (@Composable () -> Unit)? = null) {
+    LazyColumn(Modifier.fillMaxSize(), state = rememberListState(key)) {
         if (header != null) item { header() }
         itemsIndexed(songs, key = { _, s -> s.id }) { i, s -> SongRow(s) { PlayerHub.play(songs, i) } }
         item { Spacer(Modifier.height(12.dp)) }
@@ -221,10 +231,10 @@ fun SongRow(s: Song, onClick: () -> Unit) {
 }
 
 @Composable
-fun SongListScreen(title: String, songs: List<Song>, matchLabel: String) {
+fun SongListScreen(title: String, songs: List<Song>, matchLabel: String, key: String) {
     Column(Modifier.fillMaxSize()) {
         TopBar(title.ifBlank { "Unbekannt" }, onBack = { Navi.back() })
-        SongList(songs, header = {
+        SongList(songs, key = key, header = {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("Abspielen", filled = true, modifier = Modifier.weight(1f)) { PlayerHub.play(songs, 0) }
                 Pill("Anhängen", modifier = Modifier.weight(1f)) { PlayerHub.enqueue(songs) }

@@ -9,7 +9,9 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 ## Funktionen
 
 **Wiedergabe**
-- Bibliothek mit Titeln, Alben, Interpreten, Ordnern und Playlists, Wechsel per Wischen
+- Bibliothek mit Titeln, Alben, Interpreten, Ordnern und Playlists, Wechsel per Wischen; Listen behalten beim Zurückgehen ihre Position
+- Langdruck aufs App-Icon: Weiterhören, Zufallsmix, Suchen, Lyrics-Vollbild
+- Zuletzt gespielte Liste und Position bleiben nach einem Neustart erhalten
 - Hintergrund-Wiedergabe mit Steuerung in Benachrichtigung und Sperrbildschirm
 - Zufall, Wiederholen, Pause beim Abziehen des Kopfhörers
 - Wiedergabeliste: ansehen, springen, sortieren, entfernen, als Playlist speichern

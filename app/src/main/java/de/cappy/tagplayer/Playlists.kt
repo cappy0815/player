@@ -140,7 +140,7 @@ fun NameDialog(title: String, initial: String, onDone: (String?) -> Unit) {
 fun PlaylistTab() {
     var create by remember { mutableStateOf(false) }
     if (create) NameDialog("Neue Playlist", "") { n -> create = false; if (n != null) Navi.go(Nav.PlaylistNav(Playlists.create(n).id)) }
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxSize(), state = rememberListState("lib:playlists")) {
         item {
             Row(Modifier.padding(16.dp)) { Pill("Neue Playlist", filled = true, modifier = Modifier.fillMaxWidth()) { create = true } }
         }
@@ -200,7 +200,7 @@ fun PlaylistScreen(id: Long) {
                 }
             }
         }
-        LazyColumn(Modifier.fillMaxSize()) {
+        LazyColumn(Modifier.fillMaxSize(), state = rememberListState("pl:$id")) {
             item {
                 Text("${songs.size} Titel · ${fmtTime(songs.sumOf { it.durationMs })}" +
                     if (songs.size < pl.paths.size) " · ${pl.paths.size - songs.size} nicht gefunden" else "",

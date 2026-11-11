@@ -1,0 +1,10 @@
+<resources>
+    <string name="sc_resume">Weiterhören</string>
+    <string name="sc_resume_long">Zuletzt gehörte Liste fortsetzen</string>
+    <string name="sc_shuffle">Zufallsmix</string>
+    <string name="sc_shuffle_long">Alle Titel gemischt abspielen</string>
+    <string name="sc_search">Suchen</string>
+    <string name="sc_search_long">In der Bibliothek suchen</string>
+    <string name="sc_lyrics">Lyrics-Vollbild</string>
+    <string name="sc_lyrics_long">Lyrics im Vollbild zeigen</string>
+</resources>

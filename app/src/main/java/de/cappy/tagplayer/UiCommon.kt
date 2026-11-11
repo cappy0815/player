@@ -151,3 +151,24 @@ val darkColors = darkColorScheme(
     onSurfaceVariant = TextDim, secondary = AccentSoft, surfaceContainer = Surface,
     surfaceContainerHigh = Surface2, outline = TextDim
 )
+
+/**
+ * Merkt sich die Scroll-Position jeder Liste (Schlüssel z. B. "folder:/storage/…/Rock").
+ * Beim Zurückkehren aus einem Ordner, Album oder Menü steht die Liste wieder dort,
+ * wo man hineingetippt hat – statt wieder bei A.
+ */
+object ScrollMemory {
+    private val pos = HashMap<String, Pair<Int, Int>>()
+    fun get(key: String) = pos[key] ?: (0 to 0)
+    fun put(key: String, index: Int, offset: Int) { pos[key] = index to offset }
+}
+
+@Composable
+fun rememberListState(key: String): androidx.compose.foundation.lazy.LazyListState {
+    val (i, o) = remember(key) { ScrollMemory.get(key) }
+    val st = androidx.compose.runtime.saveable.rememberSaveable(key, saver = androidx.compose.foundation.lazy.LazyListState.Saver) {
+        androidx.compose.foundation.lazy.LazyListState(i, o)
+    }
+    DisposableEffect(key, st) { onDispose { ScrollMemory.put(key, st.firstVisibleItemIndex, st.firstVisibleItemScrollOffset) } }
+    return st
+}

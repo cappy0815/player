@@ -50,10 +50,14 @@ object Navi {
     val top: Nav get() = stack.last()
     fun go(n: Nav) { stack.add(n) }
     fun back(): Boolean { if (stack.size > 1) { stack.removeAt(stack.lastIndex); return true }; return false }
+    fun home() { while (stack.size > 1) stack.removeAt(stack.lastIndex) }
+    fun show(n: Nav) { if (top != n) { home(); if (n != Nav.Library) go(n) } }
 }
 
 object AppState {
     val resumeTick = mutableIntStateOf(0)
+    /** offene Aktion vom App-Icon: RESUME, SHUFFLE, SEARCH, LYRICS */
+    val shortcut = mutableStateOf<String?>(null)
 }
 
 class MainActivity : ComponentActivity() {
@@ -61,7 +65,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         PlayerHub.connect(this)
+        handleShortcut(intent)
         setContent { MaterialTheme(colorScheme = darkColors) { Root() } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleShortcut(intent)
+    }
+
+    /** Langdruck-Menü am App-Icon: Aktion merken, Root führt sie aus, sobald alles geladen ist */
+    private fun handleShortcut(i: Intent?) {
+        val a = i?.action ?: return
+        if (a.startsWith("de.cappy.tagplayer.")) { AppState.shortcut.value = a.removePrefix("de.cappy.tagplayer."); i.action = null }
     }
 
     override fun onResume() {
@@ -105,6 +121,20 @@ fun Root() {
         if (!granted) launcher.launch(perms.toTypedArray())
     }
     LaunchedEffect(Unit) { Playlists.load(ctx) }
+    // Aktion vom App-Icon ausführen, sobald Player-Verbindung und Bibliothek bereit sind
+    val sc = AppState.shortcut.value
+    LaunchedEffect(sc, PlayerHub.controller, Library.loadedOnce) {
+        if (sc == null || PlayerHub.controller == null || !Library.loadedOnce) return@LaunchedEffect
+        AppState.shortcut.value = null
+        Diag.log(ctx, "App-Icon: $sc")
+        when (sc) {
+            "RESUME" -> { if (PlayerHub.resume(ctx)) Navi.show(Nav.Player)
+                else android.widget.Toast.makeText(ctx, "Noch nichts gespielt – Zufallsmix starten oder Titel wählen", android.widget.Toast.LENGTH_LONG).show() }
+            "SHUFFLE" -> { if (Library.songs.isNotEmpty()) { PlayerHub.play(Library.songs.shuffled(), 0); Navi.show(Nav.Player) } }
+            "SEARCH" -> { Navi.home(); LibraryUi.openSearch = true }
+            "LYRICS" -> { PlayerHub.resume(ctx); ctx.startActivity(Intent(ctx, StageActivity::class.java)) }
+        }
+    }
     // Update-Prüfung höchstens einmal pro Tag beim Start
     LaunchedEffect(Unit) { Update.load(ctx); if (Update.due()) Update.check(ctx) }
     LaunchedEffect(granted) { if (granted && !Library.loadedOnce) Library.load(ctx) }
@@ -136,8 +166,8 @@ fun Root() {
                     Nav.Settings -> SettingsScreen()
                     Nav.Match -> MatchScreen()
                     is Nav.Album -> SongListScreen(n.name, Library.songs.filter { it.albumId == n.albumId }.sortedBy { it.track },
-                        matchLabel = "Album „${n.name}“")
-                    is Nav.Artist -> SongListScreen(n.name, Library.songs.filter { it.artist == n.name }, matchLabel = "Interpret „${n.name}“")
+                        matchLabel = "Album „${n.name}“", key = "album:${n.albumId}")
+                    is Nav.Artist -> SongListScreen(n.name, Library.songs.filter { it.artist == n.name }, matchLabel = "Interpret „${n.name}“", key = "artist:${n.name}")
                     is Nav.Editor -> EditorScreen(n.songId, n.candidates, n.coverOnly)
                     is Nav.Folder -> FolderScreen(n.path)
                     is Nav.PlaylistNav -> PlaylistScreen(n.id)

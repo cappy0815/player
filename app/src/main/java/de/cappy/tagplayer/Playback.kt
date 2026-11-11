@@ -60,6 +60,13 @@ class PlaybackService : MediaLibraryService() {
             .build()
         // Bibliothek für Android Auto: Playlists, Alben, Interpreten, Ordner, Suche
         session = MediaLibrarySession.Builder(this, player, AutoLibrary(applicationContext)).build()
+        // Liste/Titel/Position merken (Weiterhören, Play-Taste nach Neustart, Android Auto)
+        player.addListener(object : Player.Listener {
+            override fun onEvents(p: Player, events: Player.Events) {
+                if (events.containsAny(Player.EVENT_TIMELINE_CHANGED, Player.EVENT_MEDIA_ITEM_TRANSITION,
+                        Player.EVENT_IS_PLAYING_CHANGED, Player.EVENT_POSITION_DISCONTINUITY)) Resume.save(this@PlaybackService, p)
+            }
+        })
         Diag.log(this, "Dienst gestartet")
         ContextCompat.registerReceiver(this, screenReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF),
             ContextCompat.RECEIVER_NOT_EXPORTED)
@@ -73,6 +80,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        session?.player?.let { Resume.save(this, it) }
         try { unregisterReceiver(screenReceiver) } catch (_: Exception) {}
         session?.run { player.release(); release() }
         session = null
@@ -158,6 +166,16 @@ object PlayerHub {
     fun move(from: Int, to: Int) { controller?.let { if (from in 0 until it.mediaItemCount && to in 0 until it.mediaItemCount) it.moveMediaItem(from, to) } }
     /** Alles nach dem laufenden Titel entfernen */
     fun clearUpcoming() { controller?.let { val n = it.mediaItemCount; val c = it.currentMediaItemIndex; if (c + 1 < n) it.removeMediaItems(c + 1, n) } }
+
+    /** Weiterhören: läuft schon eine Liste, weiterspielen; sonst die zuletzt gespielte wiederherstellen */
+    fun resume(c: Context): Boolean {
+        val ctl = controller ?: return false
+        if (ctl.mediaItemCount > 0) { if (!ctl.isPlaying) { if (ctl.playbackState == Player.STATE_IDLE) ctl.prepare(); ctl.play() }; return true }
+        val (songs, start, pos) = Resume.load(c) ?: return false
+        ctl.setMediaItems(songs.map { item(it) }, start, pos)
+        ctl.prepare(); ctl.play()
+        return true
+    }
 
     fun toggle() { controller?.let { if (it.isPlaying) it.pause() else { if (it.playbackState == Player.STATE_IDLE) it.prepare(); it.play() } } }
     fun next() { controller?.seekToNextMediaItem() }
