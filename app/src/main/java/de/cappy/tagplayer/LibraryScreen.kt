@@ -148,6 +148,9 @@ fun LibraryScreen() {
                         Text(Folders.shortName(root) + " · ${songs.size} Titel", color = TextDim, fontSize = 12.sp,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
                         CheckButtons("Ordner „${java.io.File(root).name}“", songs)
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                            Pill("Album-Tags für alle Ordner setzen", modifier = Modifier.fillMaxWidth(), enabled = songs.isNotEmpty()) { Navi.go(Nav.AlbumTags(root)) }
+                        }
                     }
                 })
             }

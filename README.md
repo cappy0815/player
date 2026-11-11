@@ -21,6 +21,7 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 **Tags & Cover**
 - Tags direkt in der MP3 bearbeiten: Titel, Interpret, Album, Album-Interpret, Jahr, Genre, Titelnummer, CD, Cover, Lyrics
 - Vorher/Nachher-Vorschau vor dem Speichern
+- **Album-Tags für Ordner:** Album, Album-Interpret, Jahr, Genre, Titelanzahl, CD-Nummer (aus CD1/Disc-2-Unterordnern) und Cover für alle Dateien eines Ordners in einem Zug; eine Bilddatei im Ordner (cover.jpg, folder.jpg …) wird als Cover erkannt; für Oberordner alle Album-Unterordner auf einmal
 - Online-Abgleich über [MusicBrainz](https://musicbrainz.org), [Deezer](https://developers.deezer.com/api) und die [iTunes Search API](https://performance-partners.apple.com/search-api), Cover zusätzlich vom [Cover Art Archive](https://coverartarchive.org)
 - **Ordnerregel:** In einem Album-Ordner bekommen alle Dateien dasselbe Album und dasselbe Cover. Uneinheitliche Ordner werden bei der Cover-Prüfung immer bearbeitet; ohne sicheren Online-Treffer wird das Cover übernommen, das im Ordner die Mehrheit hat
 - Treffer mehrerer Quellen bestätigen sich gegenseitig; fehlt zum besten Treffer ein Bild, wird das nächste sichere Cover genommen

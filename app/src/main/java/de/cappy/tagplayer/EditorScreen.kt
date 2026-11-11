@@ -156,6 +156,13 @@ fun EditorScreen(songId: Long, preset: List<Candidate>, coverOnly: Boolean = fal
                 Field("CD", d.disc, Modifier.weight(1f), number = true) { d = d.copy(disc = it) }
             }
 
+            AlbumHints.albumDir(song)?.let { dir ->
+                Spacer(Modifier.height(4.dp))
+                Pill("Album, Interpret, Jahr, Genre, Cover auf ganzen Ordner übertragen", modifier = Modifier.fillMaxWidth()) {
+                    Navi.go(Nav.AlbumTags(dir.path, d.copy(cover = if (coverChanged) d.cover else null)))
+                }
+            }
+
             SectionTitle("Lyrics")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Pill(if (lyrBusy) "Suche …" else "Online suchen (LRCLIB)", enabled = !lyrBusy) {

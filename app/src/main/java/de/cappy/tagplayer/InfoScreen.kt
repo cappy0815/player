@@ -26,6 +26,13 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.9" to listOf(
+        "Album-Tags für Ordner setzen: Album, Album-Interpret, Jahr, Genre, Titelanzahl und Cover für alle Dateien in einem Zug",
+        "Bilddatei im Ordner (cover.jpg, folder.jpg …) wird als Cover erkannt und vorgeschlagen",
+        "Für Oberordner: alle Album-Unterordner auf einmal, jeder mit eigenem Album aus dem Ordnernamen",
+        "CD-Unterordner (CD1, Disc 2) werden zum Album gezählt und setzen die CD-Nummer",
+        "Im Tag-Editor: Album-Felder auf den ganzen Ordner übertragen"
+    ),
     "0.8" to listOf(
         "Langdruck aufs App-Icon: Weiterhören, Zufallsmix, Suchen, Lyrics-Vollbild",
         "Listen merken sich die Position: zurück aus Ordner, Album oder Menü landet an derselben Stelle statt wieder bei A",

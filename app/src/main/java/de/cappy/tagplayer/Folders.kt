@@ -89,7 +89,7 @@ fun FolderList(all: List<Song>, dir: String, header: (@Composable () -> Unit)? =
                 }
                 Box {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Optionen", tint = TextDim) }
-                    SongsMenu(menu, { menu = false }, "Ordner „${File(path).name}“") { Folders.songsBelow(Library.songs.toList(), path) }
+                    SongsMenu(menu, { menu = false }, "Ordner „${File(path).name}“", folder = path) { Folders.songsBelow(Library.songs.toList(), path) }
                 }
             }
         }
@@ -113,6 +113,9 @@ fun FolderScreen(path: String) {
                     Pill("Alles abspielen", filled = true, modifier = Modifier.fillMaxWidth(), enabled = below.isNotEmpty()) { PlayerHub.play(below, 0) }
                 }
                 CheckButtons("Ordner „${File(path).name}“", below)
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    Pill("Album-Tags für Ordner setzen", modifier = Modifier.fillMaxWidth(), enabled = below.isNotEmpty()) { Navi.go(Nav.AlbumTags(path)) }
+                }
                 Spacer(Modifier.height(6.dp))
             }
         })

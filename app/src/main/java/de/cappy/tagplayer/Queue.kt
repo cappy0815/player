@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
  * [songs] wird erst beim Antippen eines Eintrags ausgewertet.
  */
 @Composable
-fun SongsMenu(expanded: Boolean, onDismiss: () -> Unit, label: String, single: Song? = null, songs: () -> List<Song>) {
+fun SongsMenu(expanded: Boolean, onDismiss: () -> Unit, label: String, single: Song? = null, folder: String? = null, songs: () -> List<Song>) {
     val ctx = LocalContext.current
     fun toast(t: String) = Toast.makeText(ctx, t, Toast.LENGTH_SHORT).show()
     DropdownMenu(expanded, onDismiss, containerColor = Surface2) {
@@ -44,6 +44,8 @@ fun SongsMenu(expanded: Boolean, onDismiss: () -> Unit, label: String, single: S
         HorizontalDivider(color = TextDim.copy(alpha = .2f))
         if (single != null) DropdownMenuItem({ Text("Tags bearbeiten") }, leadingIcon = { Icon(Icons.Default.Edit, null) },
             onClick = { onDismiss(); Navi.go(Nav.Editor(single.id)) })
+        if (folder != null) DropdownMenuItem({ Text("Album-Tags für Ordner setzen") }, leadingIcon = { Icon(Icons.Default.LibraryMusic, null) },
+            onClick = { onDismiss(); Navi.go(Nav.AlbumTags(folder)) })
         DropdownMenuItem({ Text("Tags online prüfen") }, leadingIcon = { Icon(Icons.Default.Sync, null) },
             onClick = { onDismiss(); Matcher.prepare(label, songs()); Navi.go(Nav.Match) })
         DropdownMenuItem({ Text("Cover online prüfen") }, leadingIcon = { Icon(Icons.Default.Image, null) },
