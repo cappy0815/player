@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7
+- Android Auto: Playlists, Alben, Interpreten, Ordner, Alle Titel, Zufallsmix und Suche im Auto
+- Ordnerregel: in einem Album-Ordner bekommen alle Dateien dasselbe Album und dasselbe Cover
+- Cover-Prüfung bearbeitet Ordner mit uneinheitlichen Covern immer; ohne sicheren Online-Treffer wird das Mehrheits-Cover übernommen
+- Tag-Prüfung speichert keinen Treffer mit anderem Album als der Ordner (kommt in „Prüfen“)
+- Diagnose-Datei in den Einstellungen: Ordner-, Tag- und Cover-Übersicht plus Protokoll, nur auf Wunsch teilen
+
 ## 0.6
 - Tag- und Cover-Suche zusätzlich über Deezer und iTunes (mit Genre und großen Covern)
 - Treffer aus mehreren Quellen bestätigen sich gegenseitig

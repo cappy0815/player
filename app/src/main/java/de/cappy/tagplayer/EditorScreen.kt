@@ -203,9 +203,11 @@ fun EditorScreen(songId: Long, preset: List<Candidate>, coverOnly: Boolean = fal
                             Library.load(ctx)
                             Library.byId(song.id)?.let { PlayerHub.refreshMetadata(it) }
                             Toast.makeText(ctx, "Gespeichert", Toast.LENGTH_SHORT).show()
+                            Diag.log(ctx, "Editor gespeichert: ${song.path} · Album „${d.album}“ · Cover ${if (coverChanged) "geändert" else "unverändert"}")
                             if (Navi.top is Nav.Editor) Navi.back()
                         } catch (e: Exception) {
                             error = "Speichern fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"
+                            Diag.log(ctx, "Editor: Speichern fehlgeschlagen ${song.path}: ${e.message}")
                         }
                         saving = false
                     }

@@ -20,6 +20,7 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 - Tags direkt in der MP3 bearbeiten: Titel, Interpret, Album, Album-Interpret, Jahr, Genre, Titelnummer, CD, Cover, Lyrics
 - Vorher/Nachher-Vorschau vor dem Speichern
 - Online-Abgleich über [MusicBrainz](https://musicbrainz.org), [Deezer](https://developers.deezer.com/api) und die [iTunes Search API](https://performance-partners.apple.com/search-api), Cover zusätzlich vom [Cover Art Archive](https://coverartarchive.org)
+- **Ordnerregel:** In einem Album-Ordner bekommen alle Dateien dasselbe Album und dasselbe Cover. Uneinheitliche Ordner werden bei der Cover-Prüfung immer bearbeitet; ohne sicheren Online-Treffer wird das Cover übernommen, das im Ordner die Mehrheit hat
 - Treffer mehrerer Quellen bestätigen sich gegenseitig; fehlt zum besten Treffer ein Bild, wird das nächste sichere Cover genommen
 - Der Name des Speicherordners („Interpret - Album“ oder „Album“) gilt als sicherer Hinweis auf das Album, für Tags und Cover
 - Prüfung für einzelne Titel, Alben, Interpreten, ganze Ordner oder Playlists
@@ -53,6 +54,23 @@ Aktuelle Version auf der Projektseite laden: **[cappy0815.github.io › Player](
 Beim ersten Start fragt die App nach Zugriff auf die Musik. Für das Speichern von Tags braucht sie zusätzlich **„Zugriff auf alle Dateien“**, für das Lyrics-Vollbild beim Sperren **„Über anderen Apps einblenden“**. Beides lässt sich in den Einstellungen der App erteilen.
 
 Voraussetzung: Android 10 oder neuer.
+
+## Android Auto
+
+Player erscheint in Android Auto als Medien-App mit Playlists, Alben, Interpreten, Ordnern, „Alle Titel“, Zufallsmix und Suche.
+
+Weil die App nicht aus dem Play Store kommt, zeigt Android Auto sie erst nach einer einmaligen Einstellung:
+
+1. Handy-Einstellungen → Apps → Android Auto → „Weitere Einstellungen in der App“
+2. Ganz unten bei „Info“ 10-mal auf „Version“ tippen und die Entwicklereinstellungen erlauben
+3. Oben rechts ⋮ → Entwicklereinstellungen → „Unbekannte Quellen“ einschalten
+4. Handy neu mit dem Auto verbinden
+
+Grundlage: [Android-Entwicklerdoku „Test Android apps for cars“](https://developer.android.com/training/cars/testing). Menünamen können je nach Version leicht abweichen.
+
+## Diagnose
+
+Einstellungen → Diagnose → „Diagnose-Datei erstellen und teilen“ erzeugt eine ZIP-Datei mit Ordner-, Tag- und Cover-Übersicht (`folders.tsv`, `library.tsv`), den Ergebnissen des letzten Abgleichs und dem Protokoll. Keine Musik, keine Bilder. Die Datei verlässt das Handy nur, wenn man sie selbst teilt.
 
 ## Updates
 

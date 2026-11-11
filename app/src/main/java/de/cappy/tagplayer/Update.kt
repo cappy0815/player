@@ -92,6 +92,7 @@ object Update {
             e.putString("latest", latest).putString("download", download).putString("page", page)
         } else failed = true
         e.apply()
+        Diag.log(c, "Update-Prüfung: " + (r?.let { "neueste ${it.first}" } ?: "nicht erreichbar"))
         busy = false
         return r != null
     }

@@ -17,7 +17,8 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 
@@ -26,8 +27,8 @@ import com.google.common.util.concurrent.MoreExecutors
  * Sperrbildschirm-Steuerung und Kopfhörertasten.
  * Zusätzlich: beim Ausschalten des Displays optional die Lyrics-Anzeige starten.
  */
-class PlaybackService : MediaSessionService() {
-    private var session: MediaSession? = null
+class PlaybackService : MediaLibraryService() {
+    private var session: MediaLibrarySession? = null
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
@@ -57,12 +58,14 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true)   // Kopfhörer raus -> Pause
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
-        session = MediaSession.Builder(this, player).build()
+        // Bibliothek für Android Auto: Playlists, Alben, Interpreten, Ordner, Suche
+        session = MediaLibrarySession.Builder(this, player, AutoLibrary(applicationContext)).build()
+        Diag.log(this, "Dienst gestartet")
         ContextCompat.registerReceiver(this, screenReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF),
             ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = session
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         val p = session?.player
@@ -126,16 +129,7 @@ object PlayerHub {
 
     fun position(): Long = controller?.currentPosition ?: 0L
 
-    private fun item(s: Song) = MediaItem.Builder()
-        .setMediaId(s.id.toString())
-        .setUri(s.uri)
-        .setMediaMetadata(
-            MediaMetadata.Builder()
-                .setTitle(s.title.ifBlank { s.fileName })
-                .setArtist(s.artist)
-                .setAlbumTitle(s.album)
-                .build()
-        ).build()
+    private fun item(s: Song) = songMediaItem(s)
 
     fun play(list: List<Song>, index: Int) {
         val c = controller ?: return

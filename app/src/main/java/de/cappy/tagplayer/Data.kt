@@ -70,6 +70,7 @@ object Library {
         // in einem Rutsch ersetzen, damit die Liste nicht kurz leer ist
         Snapshot.withMutableSnapshot { songs.clear(); songs.addAll(list) }
         loading = false; loadedOnce = true; version++
+        Diag.log(ctx, "Bibliothek: ${list.size} Titel, ${raw.size} im MediaStore, $hiddenShort zu kurz, $hiddenFolder außerhalb der Ordner")
     }
 
     /**

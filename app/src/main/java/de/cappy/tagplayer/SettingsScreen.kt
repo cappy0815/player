@@ -2,6 +2,7 @@ package de.cappy.tagplayer
 
 import android.content.Intent
 import android.provider.Settings
+import kotlinx.coroutines.launch
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
@@ -124,6 +125,26 @@ fun SettingsScreen() {
                 }
             }
 
+            SectionTitle("Android Auto")
+            Card {
+                Text("Player erscheint in Android Auto als Medien-App: Playlists, Alben, Interpreten, Ordner, Alle Titel, Zufallsmix und Suche.",
+                    color = TextDim, fontSize = 13.sp, lineHeight = 18.sp)
+                Spacer(Modifier.height(6.dp))
+                Text("Weil die App nicht aus dem Play Store kommt, blendet Android Auto sie erst nach einer einmaligen Einstellung ein:",
+                    color = AccentSoft, fontSize = 12.sp, lineHeight = 16.sp)
+                Spacer(Modifier.height(4.dp))
+                Text("1. Handy-Einstellungen → Apps → Android Auto → „Weitere Einstellungen in der App“\n" +
+                    "2. Ganz unten bei „Info“ 10-mal auf „Version“ tippen und die Entwicklereinstellungen erlauben\n" +
+                    "3. Oben rechts ⋮ → Entwicklereinstellungen → „Unbekannte Quellen“ einschalten\n" +
+                    "4. Handy neu mit dem Auto verbinden",
+                    color = TextDim, fontSize = 12.sp, lineHeight = 17.sp)
+                Spacer(Modifier.height(4.dp))
+                Text("Menünamen können je nach Android-Auto-Version leicht abweichen.", color = TextDim.copy(alpha = .7f), fontSize = 11.sp)
+            }
+
+            SectionTitle("Diagnose")
+            Card { DiagBlock() }
+
             SectionTitle("Updates")
             Card { UpdateBlock() }
 
@@ -158,3 +179,39 @@ fun treeToPath(uri: Uri): String? = try {
     val base = if (vol.equals("primary", true)) Environment.getExternalStorageDirectory().absolutePath else "/storage/$vol"
     (if (rel.isBlank()) base else "$base/$rel").trimEnd('/')
 } catch (_: Exception) { null }
+
+@Composable
+fun DiagBlock() {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    var prog by remember { mutableStateOf("") }
+    var file by remember { mutableStateOf<java.io.File?>(null) }
+    var size by remember { mutableLongStateOf(Diag.logSize(ctx)) }
+    Text("Für die Fehlersuche: eine ZIP-Datei mit Ordnern, Tags, Cover-Prüfsummen, Abgleich-Ergebnissen und Protokoll. " +
+        "Keine Musik, keine Bilder. Die Datei verlässt das Handy nur, wenn du sie selbst teilst (z. B. per Mail oder in Google Drive).",
+        color = TextDim, fontSize = 12.sp, lineHeight = 16.sp)
+    Spacer(Modifier.height(8.dp))
+    Text("Protokoll: ${size / 1024} KB", color = TextDim, fontSize = 12.sp)
+    Spacer(Modifier.height(8.dp))
+    Pill(if (busy) "Erstelle … $prog" else "Diagnose-Datei erstellen und teilen", filled = true, enabled = !busy && Library.songs.isNotEmpty(),
+        modifier = Modifier.fillMaxWidth()) {
+        busy = true
+        scope.launch {
+            try {
+                val f = Diag.build(ctx) { done, total -> prog = "$done/$total" }
+                file = f; Diag.share(ctx, f)
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(ctx, "Fehler: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            }
+            busy = false; size = Diag.logSize(ctx)
+        }
+    }
+    file?.let { f ->
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Pill("Erneut teilen", modifier = Modifier.weight(1f)) { Diag.share(ctx, f) }
+            Pill("Protokoll leeren", modifier = Modifier.weight(1f)) { Diag.clear(ctx); size = 0; file = null }
+        }
+    }
+}

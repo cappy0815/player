@@ -12,8 +12,8 @@ android {
         applicationId = "de.cappy.tagplayer"
         minSdk = 29
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.6"
+        versionCode = 10
+        versionName = "0.7"
     }
     // Signierschlüssel liegt NICHT im Repo. Angaben in keystore.properties
     val ksFile = rootProject.file("keystore.properties")
@@ -53,6 +53,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.6.1")
     implementation("androidx.media3:media3-session:1.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.10.1")
     implementation("com.google.guava:guava:33.4.0-android")
     implementation("net.jthink:jaudiotagger:3.0.1")
 }
