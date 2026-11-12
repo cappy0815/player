@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 
@@ -50,9 +51,41 @@ fun songMediaItem(s: Song, mediaId: String = s.id.toString()): MediaItem = Media
 class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private suspend fun ensureLoaded() {
-        Playlists.load(ctx)
-        if (!Library.loadedOnce && hasAudio(ctx)) Library.load(ctx)
+    private var session: MediaLibrarySession? = null
+    private var loadJob: kotlinx.coroutines.Job? = null
+
+    /**
+     * Bibliothek im Hintergrund laden und höchstens [waitMs] warten. Android Auto zeigt sonst eine
+     * Sanduhr, bis alles eingelesen ist. Ist das Laden danach fertig, werden die Listen im Auto
+     * aktualisiert (notifyChildrenChanged).
+     */
+    private suspend fun ensureLoaded(waitMs: Long = 4000): Boolean {
+        if (Library.loadedOnce) return true
+        if (loadJob == null) {
+            loadJob = scope.launch {
+                val t0 = System.currentTimeMillis()
+                try {
+                    Playlists.load(ctx)
+                    if (hasAudio(ctx)) Library.load(ctx) else Diag.log(ctx, "Auto: keine Berechtigung für Musik – App einmal am Handy öffnen")
+                } catch (e: Exception) { Diag.log(ctx, "Auto: Laden fehlgeschlagen: ${e.javaClass.simpleName}: ${e.message}") }
+                Diag.log(ctx, "Auto: Bibliothek geladen in ${System.currentTimeMillis() - t0} ms")
+                session?.let { ses -> listOf("root", "pl", "al", "ar", "fo", "all").forEach { id ->
+                    try { ses.notifyChildrenChanged(id, Int.MAX_VALUE, null) } catch (_: Exception) {} } }
+            }
+        }
+        kotlinx.coroutines.withTimeoutOrNull(waitMs) { loadJob?.join() }
+        return Library.loadedOnce
+    }
+
+    private fun waiting(): MediaItem = MediaItem.Builder().setMediaId("wait").setMediaMetadata(
+        MediaMetadata.Builder().setTitle("Bibliothek wird geladen …").setSubtitle("gleich noch einmal öffnen")
+            .setIsBrowsable(false).setIsPlayable(false).build()).build()
+
+    /** Fehler abfangen und protokollieren, damit Android Auto nie ohne Antwort bleibt */
+    private suspend fun <T> safe(what: String, fallback: () -> T, block: suspend () -> T): T {
+        val t0 = System.currentTimeMillis()
+        return try { block().also { Diag.log(ctx, "Auto: $what (${System.currentTimeMillis() - t0} ms)") } }
+        catch (e: Exception) { Diag.log(ctx, "Auto: $what FEHLER ${e.javaClass.simpleName}: ${e.message}"); fallback() }
     }
 
     private fun folder(id: String, title: String, sub: String? = null, art: Uri? = null, style: Int? = null): MediaItem {
@@ -166,12 +199,24 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
     // ---------- Media3-Callback ----------
     override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo,
                                   params: MediaLibraryService.LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> =
-        scope.future { ensureLoaded(); LibraryResult.ofItem(root(), params) }
+        scope.future {
+            this@AutoLibrary.session = session
+            Diag.log(ctx, "Auto: verbunden mit ${browser.packageName}")
+            scope.launch { ensureLoaded(0) }          // Laden starten, Startseite sofort zeigen
+            LibraryResult.ofItem(root(), params)
+        }
 
     override fun onGetChildren(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String,
                                page: Int, pageSize: Int, params: MediaLibraryService.LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
-        scope.future { ensureLoaded(); LibraryResult.ofItemList(page(children(parentId), page, pageSize), params) }
+        scope.future {
+            this@AutoLibrary.session = session
+            safe("Liste $parentId", { LibraryResult.ofItemList(ImmutableList.of(waiting()), params) }) {
+                val ready = ensureLoaded()
+                val list = if (!ready && parentId != "root") listOf(waiting()) else children(parentId)
+                LibraryResult.ofItemList(page(list, page, pageSize), params)
+            }
+        }
 
     override fun onGetItem(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, mediaId: String
     ): ListenableFuture<LibraryResult<MediaItem>> = scope.future {
@@ -198,12 +243,13 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
 
     override fun onAddMediaItems(mediaSession: MediaSession, controller: MediaSession.ControllerInfo,
                                  mediaItems: MutableList<MediaItem>): ListenableFuture<MutableList<MediaItem>> =
-        scope.future { ensureLoaded(); resolve(mediaItems).first.toMutableList() }
+        scope.future { safe("Hinzufügen ${mediaItems.size}", { mutableListOf() }) { ensureLoaded(15000); resolve(mediaItems).first.toMutableList() } }
 
     /** Systemweites „Fortsetzen“ (Kopfhörer-/Auto-Taste, Android Auto) nach einem Neustart */
     override fun onPlaybackResumption(mediaSession: MediaSession, controller: MediaSession.ControllerInfo
     ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
-        ensureLoaded()
+        ensureLoaded(15000)
+        Diag.log(ctx, "Auto: Wiedergabe fortsetzen")
         val r = Resume.load(ctx)
         if (r == null) MediaSession.MediaItemsWithStartPosition(songsOf("mix").map { songMediaItem(it) }, 0, 0L)
         else MediaSession.MediaItemsWithStartPosition(r.first.map { songMediaItem(it) }, r.second, r.third)
@@ -212,7 +258,8 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
     override fun onSetMediaItems(mediaSession: MediaSession, controller: MediaSession.ControllerInfo,
                                  mediaItems: MutableList<MediaItem>, startIndex: Int, startPositionMs: Long
     ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
-        ensureLoaded()
+        ensureLoaded(15000)
+        Diag.log(ctx, "Auto/App: abspielen ${mediaItems.firstOrNull()?.mediaId} (+${mediaItems.size - 1})")
         val (list, start) = resolve(mediaItems)
         // eigene App: Startindex wie übergeben; Auto-Auswahl: Index aus der Liste
         val expanded = mediaItems.size == 1 && list.size > 1

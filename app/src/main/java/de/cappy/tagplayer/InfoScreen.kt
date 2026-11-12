@@ -26,6 +26,11 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.9.1" to listOf(
+        "Android Auto: Startseite erscheint sofort, die Bibliothek lädt im Hintergrund (keine Dauer-Sanduhr mehr)",
+        "Android Auto: Fehler werden abgefangen und in der Diagnose protokolliert",
+        "Laden der Bibliothek schneller, wenn viele Dateien gerade geändert wurden"
+    ),
     "0.9" to listOf(
         "Album-Tags für Ordner setzen: Album, Album-Interpret, Jahr, Genre, Titelanzahl und Cover für alle Dateien in einem Zug",
         "Bilddatei im Ordner (cover.jpg, folder.jpg …) wird als Cover erkannt und vorgeschlagen",

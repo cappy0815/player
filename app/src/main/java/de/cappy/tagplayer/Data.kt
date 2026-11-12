@@ -85,6 +85,9 @@ object Library {
             val fileSec = f.lastModified() / 1000
             if (fileSec - s.modified <= 2) return@map s
             stale += s.path
+            // höchstens 40 Dateien pro Durchgang direkt lesen, sonst dauert das Laden (z. B. im Auto) zu lange;
+            // der Rest wird über das Neu-Einlesen von Android aktualisiert
+            if (stale.size > 40) return@map s
             try {
                 val t = Tags.read(s.path)
                 s.copy(
@@ -95,7 +98,10 @@ object Library {
                 )
             } catch (_: Exception) { s }
         }
-        if (stale.isNotEmpty()) MediaScannerConnection.scanFile(ctx, stale.toTypedArray(), null, null)
+        if (stale.isNotEmpty()) {
+            MediaScannerConnection.scanFile(ctx, stale.toTypedArray(), null, null)
+            Diag.log(ctx, "Bibliothek: ${stale.size} Dateien neuer als der Android-Musikindex, Neu-Einlesen angestoßen")
+        }
         return out
     }
 

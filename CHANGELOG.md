@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1
+- Android Auto: Startseite erscheint sofort, die Bibliothek lädt im Hintergrund (keine Dauer-Sanduhr mehr)
+- Android Auto: Fehler werden abgefangen und in der Diagnose protokolliert
+- Laden der Bibliothek schneller, wenn viele Dateien gerade geändert wurden
+
 ## 0.9
 - Album-Tags für Ordner setzen: Album, Album-Interpret, Jahr, Genre, Titelanzahl und Cover für alle Dateien in einem Zug
 - Bilddatei im Ordner (cover.jpg, folder.jpg …) wird als Cover erkannt und vorgeschlagen
