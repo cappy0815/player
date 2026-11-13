@@ -67,6 +67,8 @@ fun PlayerScreen() {
         // Cover <-> Lyrics per Wischen
         val pager = rememberPagerState(initialPage = if (PlayerUi.showLyrics) 1 else 0) { 2 }
         LaunchedEffect(pager.currentPage) { PlayerUi.showLyrics = pager.currentPage == 1 }
+        // von außen angefordert (Wiedergabeliste, Miniplayer, „immer zu Lyrics“)
+        LaunchedEffect(PlayerUi.showLyrics) { val t = if (PlayerUi.showLyrics) 1 else 0; if (pager.currentPage != t) pager.animateScrollToPage(t) }
         HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth()) { page ->
             if (page == 1) {
                 val cur = if (LyricsStore.currentSongId == s.id) LyricsStore.current else null

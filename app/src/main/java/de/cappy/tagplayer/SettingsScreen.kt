@@ -34,6 +34,7 @@ fun SettingsScreen() {
     val tick = AppState.resumeTick.intValue
     val allFiles = remember(tick) { hasAllFiles() }
     val overlay = remember(tick) { Settings.canDrawOverlays(ctx) }
+    val notif = remember(tick) { androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled() }
     // Bibliothek neu einlesen, wenn Ordner oder Mindestlänge geändert wurden
     LaunchedEffect(p.musicFolders, p.minDurationSec) {
         kotlinx.coroutines.delay(600)
@@ -53,6 +54,10 @@ fun SettingsScreen() {
             SectionTitle("Berechtigungen")
             Card {
                 Status("Zugriff auf alle Dateien (Tags speichern)", allFiles) { openAllFilesSettings(ctx) }
+                Status("Benachrichtigungen (Steuerung bei gesperrtem Handy)", notif) {
+                    ctx.startActivity(android.content.Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
                 Status("Über anderen Apps einblenden (Lyrics beim Sperren)", overlay) { openOverlaySettings(ctx) }
             }
 
@@ -104,6 +109,12 @@ fun SettingsScreen() {
                     p.lyricsToTag) { p.lyricsToTag = it }
             }
 
+            SectionTitle("Wiedergabe")
+            Card {
+                SwitchRow("Beim Abspielen immer zu Lyrics wechseln", "Startest du einen Titel aus einer Liste, öffnet sich direkt die Lyrics-Ansicht",
+                    p.autoLyricsView) { p.autoLyricsView = it }
+            }
+
             SectionTitle("Lyrics-Display")
             Card {
                 ValueSlider("Schriftgröße", p.stageFontSp, 24..72, "sp") { p.stageFontSp = it }
@@ -150,7 +161,9 @@ fun SettingsScreen() {
 
             SectionTitle("Info")
             Card {
-                Pill("Info, Versionen & Update", modifier = Modifier.fillMaxWidth()) { Navi.go(Nav.Info) }
+                Pill("Hilfe", filled = true, modifier = Modifier.fillMaxWidth()) { Navi.go(Nav.Help) }
+                Spacer(Modifier.height(8.dp))
+                Pill("Info & Versionen", modifier = Modifier.fillMaxWidth()) { Navi.go(Nav.Info) }
             }
             Spacer(Modifier.height(30.dp))
         }

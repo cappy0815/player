@@ -205,6 +205,14 @@ class Prefs private constructor(ctx: Context) {
     /** Ausgewählte Musikordner (absolute Pfade); leer = alle Musik auf dem Gerät */
     var musicFolders: Set<String> get() = _folders.value; set(v) { _folders.value = v; sp.edit().putStringSet("musicFolders", v).apply() }
 
+    private val _sort = i("titleSort", 0)
+    /** Sortierung der Titelliste: 0 Titel A–Z, 1 Interpret, 2 Album, 3 Dateiname, 4 zuletzt geändert */
+    var titleSort: Int get() = _sort.intValue; set(v) { _sort.intValue = v; sp.edit().putInt("titleSort", v).apply() }
+
+    private val _autoLyricsView = b("autoLyricsView", false)
+    /** Beim Abspielen aus einer Liste direkt die Lyrics-Ansicht öffnen */
+    var autoLyricsView: Boolean get() = _autoLyricsView.value; set(v) { _autoLyricsView.value = v; sp.edit().putBoolean("autoLyricsView", v).apply() }
+
     private val _shift = b("pixelShift", true)
     var pixelShift: Boolean get() = _shift.value; set(v) { _shift.value = v; sp.edit().putBoolean("pixelShift", v).apply() }
 
@@ -218,4 +226,20 @@ class Prefs private constructor(ctx: Context) {
 fun fmtTime(ms: Long): String {
     val s = (ms / 1000).coerceAtLeast(0)
     return "%d:%02d".format(s / 60, s % 60)
+}
+
+/** "1 Album" / "3 Alben", "1 Playlist" / "2 Playlists" … */
+fun plural(n: Int, one: String, many: String) = "$n ${if (n == 1) one else many}"
+
+val TITLE_SORTS = listOf("Titel A–Z", "Interpret", "Album", "Dateiname", "Zuletzt geändert")
+
+fun sortTitles(l: List<Song>, mode: Int): List<Song> {
+    val t: (Song) -> String = { (it.title.ifBlank { it.fileName }).lowercase() }
+    return when (mode) {
+        1 -> l.sortedWith(compareBy<Song>({ it.artist.lowercase() }, { it.album.lowercase() }, { it.track }, t))
+        2 -> l.sortedWith(compareBy<Song>({ it.album.lowercase() }, { it.track }, t))
+        3 -> l.sortedBy { it.fileName.lowercase() }
+        4 -> l.sortedByDescending { it.modified }
+        else -> l.sortedWith(compareBy(t, { it.artist.lowercase() }))
+    }
 }

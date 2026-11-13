@@ -43,6 +43,7 @@ sealed class Nav {
     data class LyricsSync(val songId: Long) : Nav()
     data object Info : Nav()
     data object Queue : Nav()
+    data object Help : Nav()
 }
 
 /** Kleiner Navigationsstapel */
@@ -136,6 +137,11 @@ fun Root() {
             "LYRICS" -> { PlayerHub.resume(ctx); ctx.startActivity(Intent(ctx, StageActivity::class.java)) }
         }
     }
+    // Einstellung „Beim Abspielen immer zu Lyrics wechseln“
+    val started = PlayerHub.startedFromList
+    LaunchedEffect(started) {
+        if (started > 0 && Prefs.get(ctx).autoLyricsView && Navi.top != Nav.Player) { PlayerUi.showLyrics = true; Navi.go(Nav.Player) }
+    }
     // Update-Prüfung höchstens einmal pro Tag beim Start
     LaunchedEffect(Unit) { Update.load(ctx); if (Update.due()) Update.check(ctx) }
     LaunchedEffect(granted) { if (granted && !Library.loadedOnce) Library.load(ctx) }
@@ -177,6 +183,7 @@ fun Root() {
                     is Nav.LyricsSync -> LyricsSyncScreen(n.songId)
                     Nav.Info -> InfoScreen()
                     Nav.Queue -> QueueScreen()
+                    Nav.Help -> HelpScreen()
                 }
             }
             if (Navi.top != Nav.Player && PlayerHub.currentId >= 0) MiniPlayer()

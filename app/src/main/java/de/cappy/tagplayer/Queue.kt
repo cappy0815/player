@@ -78,6 +78,9 @@ fun QueueScreen() {
 
     Column(Modifier.fillMaxSize()) {
         TopBar("Wiedergabeliste", onBack = { Navi.back() }) {
+            IconButton(enabled = cur >= 0, onClick = { PlayerUi.showLyrics = true; Navi.show(Nav.Player) }) {
+                Icon(Icons.Default.Lyrics, "Lyrics anzeigen", tint = Accent)
+            }
             IconButton(enabled = songs.isNotEmpty(), onClick = { save = true }) { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, "Als Playlist speichern", tint = Accent) }
             IconButton(enabled = cur < ids.lastIndex, onClick = { confirmClear = true }) { Icon(Icons.Default.ClearAll, "Kommende entfernen", tint = Accent) }
         }

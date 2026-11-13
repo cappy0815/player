@@ -196,6 +196,35 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
         return out to 0
     }
 
+    // ---------- „Beenden“ in der Benachrichtigung ----------
+    companion object {
+        val STOP = androidx.media3.session.SessionCommand("de.cappy.tagplayer.STOP", Bundle.EMPTY)
+        fun stopButton(): androidx.media3.session.CommandButton =
+            androidx.media3.session.CommandButton.Builder(androidx.media3.session.CommandButton.ICON_STOP)
+                .setDisplayName("Beenden").setSessionCommand(STOP).build()
+    }
+
+    override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
+        val cmds = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(STOP).build()
+        return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            .setAvailableSessionCommands(cmds)
+            .setCustomLayout(ImmutableList.of(stopButton()))
+            .build()
+    }
+
+    override fun onCustomCommand(session: MediaSession, controller: MediaSession.ControllerInfo,
+                                 customCommand: androidx.media3.session.SessionCommand, args: Bundle
+    ): ListenableFuture<androidx.media3.session.SessionResult> {
+        if (customCommand.customAction == STOP.customAction) {
+            val p = session.player
+            Resume.save(ctx, p)                  // Weiterhören bleibt möglich
+            p.pause(); p.stop(); p.clearMediaItems()
+            Diag.log(ctx, "Benachrichtigung: Beenden")
+        }
+        return com.google.common.util.concurrent.Futures.immediateFuture(
+            androidx.media3.session.SessionResult(androidx.media3.session.SessionResult.RESULT_SUCCESS))
+    }
+
     // ---------- Media3-Callback ----------
     override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo,
                                   params: MediaLibraryService.LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> =

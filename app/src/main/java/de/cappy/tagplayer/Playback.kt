@@ -59,7 +59,11 @@ class PlaybackService : MediaLibraryService() {
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
         // Bibliothek für Android Auto: Playlists, Alben, Interpreten, Ordner, Suche
-        session = MediaLibrarySession.Builder(this, player, AutoLibrary(applicationContext)).build()
+        session = MediaLibrarySession.Builder(this, player, AutoLibrary(applicationContext))
+            .setCustomLayout(com.google.common.collect.ImmutableList.of(AutoLibrary.stopButton()))
+            .setSessionActivity(android.app.PendingIntent.getActivity(this, 0,
+                android.content.Intent(this, MainActivity::class.java), android.app.PendingIntent.FLAG_IMMUTABLE))
+            .build()
         // Liste/Titel/Position merken (Weiterhören, Play-Taste nach Neustart, Android Auto)
         player.addListener(object : Player.Listener {
             override fun onEvents(p: Player, events: Player.Events) {
@@ -139,10 +143,14 @@ object PlayerHub {
 
     private fun item(s: Song) = songMediaItem(s)
 
+    /** wird nach dem Starten aus einer Liste gesetzt; Root öffnet dann ggf. die Lyrics-Ansicht */
+    var startedFromList by mutableIntStateOf(0)
+
     fun play(list: List<Song>, index: Int) {
         val c = controller ?: return
         c.setMediaItems(list.map { item(it) }, index.coerceIn(0, list.lastIndex), 0L)
         c.prepare(); c.play()
+        startedFromList++
     }
 
     // ---------- Wiedergabeliste ----------

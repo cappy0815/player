@@ -13,7 +13,7 @@ import java.net.URLEncoder
 import java.text.Normalizer
 import kotlin.math.abs
 
-private const val UA = "Player/0.9.1 ( https://github.com/cappy0815 )"
+private const val UA = "Player/0.10 ( https://github.com/cappy0815 )"
 
 object Http {
     /** GET, liefert (Statuscode, Bytes). Folgt Weiterleitungen (Cover Art Archive -> archive.org). */

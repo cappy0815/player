@@ -26,6 +26,14 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.10" to listOf(
+        "Hilfe-Seite mit Anleitung zu allen Funktionen und Link zur Projektseite",
+        "Benachrichtigung: zusätzlich „Beenden“ (Wiedergabe stoppen und Benachrichtigung schließen)",
+        "Titelliste alphabetisch, Sortierung wählbar (Titel, Interpret, Album, Dateiname, zuletzt geändert)",
+        "Lyrics-Knopf in Wiedergabeliste und Miniplayer; Einstellung „Beim Abspielen immer zu Lyrics wechseln“",
+        "„1 Album“ statt „1 Alben“; Untertitel neben „Player“ mit Abstand auf einer Linie",
+        "Update-Prüfung nur noch in den Einstellungen"
+    ),
     "0.9.1" to listOf(
         "Android Auto: Startseite erscheint sofort, die Bibliothek lädt im Hintergrund (keine Dauer-Sanduhr mehr)",
         "Android Auto: Fehler werden abgefangen und in der Diagnose protokolliert",
@@ -137,8 +145,12 @@ fun InfoScreen() {
                 Pill("GitHub", modifier = Modifier.fillMaxWidth()) { openUrl(ctx, GITHUB_URL) }
             }
 
-            SectionTitle("Updates")
-            Card { UpdateBlock() }
+            SectionTitle("Hilfe & Updates")
+            Card {
+                Pill("Hilfe öffnen", filled = true, modifier = Modifier.fillMaxWidth()) { Navi.go(Nav.Help) }
+                Spacer(Modifier.height(8.dp))
+                Pill("Updates (Einstellungen)", modifier = Modifier.fillMaxWidth()) { Navi.go(Nav.Settings) }
+            }
 
             SectionTitle("Neu in dieser Version")
             Card {

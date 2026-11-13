@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,13 +42,14 @@ fun TopBar(title: String, onBack: (() -> Unit)? = null, tagline: String? = null,
     ) {
         if (onBack != null) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück", tint = Accent) }
         else Spacer(Modifier.width(12.dp))
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
+        Row(Modifier.weight(1f)) {
+            // Untertitel auf derselben Grundlinie wie "Player", mit etwas Abstand
             Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium, maxLines = 1,
-                overflow = TextOverflow.Ellipsis)
+                overflow = TextOverflow.Ellipsis, modifier = Modifier.alignByBaseline())
             if (tagline != null) {
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(14.dp))
                 Text(tagline, color = Accent.copy(alpha = .85f), fontSize = 12.sp, maxLines = 1, softWrap = false,
-                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(bottom = 3.dp))
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.alignByBaseline())
             }
         }
         actions()
@@ -90,6 +92,7 @@ fun LibraryScreen() {
                     DropdownMenuItem({ Text("Abgleich-Ergebnisse") }, onClick = { menu = false; Navi.go(Nav.Match) })
                     DropdownMenuItem({ Text("Bibliothek neu einlesen") }, onClick = { menu = false; scope.launch { Library.load(ctx) } })
                     DropdownMenuItem({ Text("Einstellungen") }, onClick = { menu = false; Navi.go(Nav.Settings) })
+                    DropdownMenuItem({ Text("Hilfe") }, onClick = { menu = false; Navi.go(Nav.Help) })
                     DropdownMenuItem({ Text("Info") }, onClick = { menu = false; Navi.go(Nav.Info) })
                 }
             }
@@ -127,7 +130,29 @@ fun LibraryScreen() {
         // Wischen zwischen den Reitern
         HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 0) { page ->
         when (page) {
-            0 -> SongList(songs, key = "lib:titles:$q")
+            0 -> {
+                val prefs = Prefs.get(ctx)
+                var sortMenu by remember { mutableStateOf(false) }
+                val sorted = remember(songs, prefs.titleSort) { sortTitles(songs, prefs.titleSort) }
+                SongList(sorted, key = "lib:titles:$q:${prefs.titleSort}", header = {
+                    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("${sorted.size} Titel", color = TextDim, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                        Box {
+                            TextButton(onClick = { sortMenu = true }) {
+                                Icon(Icons.AutoMirrored.Filled.Sort, null, tint = Accent, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(TITLE_SORTS[prefs.titleSort], color = Accent, fontSize = 13.sp)
+                            }
+                            DropdownMenu(sortMenu, { sortMenu = false }, containerColor = Surface2) {
+                                TITLE_SORTS.forEachIndexed { i, n ->
+                                    DropdownMenuItem({ Text(n, color = if (i == prefs.titleSort) Accent else Color.White) },
+                                        onClick = { sortMenu = false; prefs.titleSort = i })
+                                }
+                            }
+                        }
+                    }
+                })
+            }
             1 -> {
                 val albums = songs.groupBy { it.albumId }.values.sortedBy { it.first().album.lowercase() }
                 LazyColumn(Modifier.fillMaxSize(), state = rememberListState("lib:albums:$q")) {
@@ -160,7 +185,7 @@ fun LibraryScreen() {
                 LazyColumn(Modifier.fillMaxSize(), state = rememberListState("lib:artists:$q")) {
                     items(artists, key = { "a:" + it.key }) { (name, list) ->
                         GroupRow(list.first(), name.ifBlank { "Unbekannter Interpret" },
-                            "${list.map { it.album }.distinct().size} Alben · ${list.size} Titel", songs = { list }) { Navi.go(Nav.Artist(name)) }
+                            "${plural(list.map { it.album }.distinct().size, "Album", "Alben")} · ${list.size} Titel", songs = { list }) { Navi.go(Nav.Artist(name)) }
                     }
                 }
             }
@@ -269,6 +294,7 @@ fun MiniPlayer() {
                 Icon(if (PlayerHub.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Play/Pause", tint = Accent, modifier = Modifier.size(32.dp))
             }
             IconButton(onClick = { PlayerHub.next() }) { Icon(Icons.Default.SkipNext, "Weiter", tint = Color.White) }
+            IconButton(onClick = { PlayerUi.showLyrics = true; Navi.go(Nav.Player) }) { Icon(Icons.Default.Lyrics, "Lyrics", tint = TextDim) }
             IconButton(onClick = { Navi.go(Nav.Queue) }) { Icon(Icons.AutoMirrored.Filled.QueueMusic, "Wiedergabeliste", tint = TextDim) }
         }
     }
