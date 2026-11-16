@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.1
+- Android Auto: Ursache der Dauer-Sanduhr behoben (Verklemmung beim Verbinden – die Startseite wird jetzt sofort geliefert)
+
 ## 0.10
 - Hilfe-Seite mit Anleitung zu allen Funktionen und Link zur Projektseite
 - Benachrichtigung: zusätzlich „Beenden“ (Wiedergabe stoppen und Benachrichtigung schließen)

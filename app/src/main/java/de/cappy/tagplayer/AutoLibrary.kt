@@ -226,14 +226,19 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
     }
 
     // ---------- Media3-Callback ----------
+    /**
+     * WICHTIG: Media3 wartet bei Android Auto (MediaBrowserCompat) auf dieses Ergebnis BLOCKIEREND auf dem
+     * Haupt-Thread (MediaLibraryServiceLegacyStub.onGetRoot → future.get()). Ein Ergebnis, das selbst erst
+     * auf dem Haupt-Thread berechnet wird, verklemmt sich dort für immer (Sanduhr). Deshalb sofort fertig
+     * zurückgeben und das Laden der Bibliothek erst danach anstoßen.
+     */
     override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo,
-                                  params: MediaLibraryService.LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> =
-        scope.future {
-            this@AutoLibrary.session = session
-            Diag.log(ctx, "Auto: verbunden mit ${browser.packageName}")
-            scope.launch { ensureLoaded(0) }          // Laden starten, Startseite sofort zeigen
-            LibraryResult.ofItem(root(), params)
-        }
+                                  params: MediaLibraryService.LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> {
+        this.session = session
+        Diag.log(ctx, "Auto: verbunden mit ${browser.packageName}")
+        scope.launch { ensureLoaded(0) }          // läuft, sobald der Haupt-Thread wieder frei ist
+        return com.google.common.util.concurrent.Futures.immediateFuture(LibraryResult.ofItem(root(), params))
+    }
 
     override fun onGetChildren(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String,
                                page: Int, pageSize: Int, params: MediaLibraryService.LibraryParams?

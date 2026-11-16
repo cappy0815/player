@@ -26,6 +26,9 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.10.1" to listOf(
+        "Android Auto: Ursache der Dauer-Sanduhr behoben (Verklemmung beim Verbinden – die Startseite wird jetzt sofort geliefert)"
+    ),
     "0.10" to listOf(
         "Hilfe-Seite mit Anleitung zu allen Funktionen und Link zur Projektseite",
         "Benachrichtigung: zusätzlich „Beenden“ (Wiedergabe stoppen und Benachrichtigung schließen)",
