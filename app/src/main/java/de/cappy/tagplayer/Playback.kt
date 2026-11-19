@@ -65,7 +65,9 @@ class PlaybackService : MediaLibraryService() {
                 android.content.Intent(this, MainActivity::class.java), android.app.PendingIntent.FLAG_IMMUTABLE))
             .build()
         // Liste/Titel/Position merken (Weiterhören, Play-Taste nach Neustart, Android Auto)
+        AudioDiag.start(this)
         player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) { if (isPlaying) AudioDiag.snapshot(this@PlaybackService, "Wiedergabe startet") }
             override fun onEvents(p: Player, events: Player.Events) {
                 if (events.containsAny(Player.EVENT_TIMELINE_CHANGED, Player.EVENT_MEDIA_ITEM_TRANSITION,
                         Player.EVENT_IS_PLAYING_CHANGED, Player.EVENT_POSITION_DISCONTINUITY)) Resume.save(this@PlaybackService, p)
@@ -85,6 +87,7 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onDestroy() {
         session?.player?.let { Resume.save(this, it) }
+        AudioDiag.stop(this)
         try { unregisterReceiver(screenReceiver) } catch (_: Exception) {}
         session?.run { player.release(); release() }
         session = null

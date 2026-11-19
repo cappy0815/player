@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import androidx.media3.common.MediaItem
@@ -205,6 +206,8 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
     }
 
     override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
+        // wer steuert? (Auto per Bluetooth meldet sich meist als com.android.bluetooth, Android Auto als com.google.android.projection.gearhead)
+        if (controller.packageName != ctx.packageName) Diag.log(ctx, "Steuerung verbunden: ${controller.packageName} (Version ${controller.controllerVersion})")
         val cmds = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(STOP).build()
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
             .setAvailableSessionCommands(cmds)
@@ -223,6 +226,15 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
         }
         return com.google.common.util.concurrent.Futures.immediateFuture(
             androidx.media3.session.SessionResult(androidx.media3.session.SessionResult.RESULT_SUCCESS))
+    }
+
+    /** Tasten von Lenkrad, Kopfhörer oder Radio */
+    override fun onMediaButtonEvent(session: MediaSession, controllerInfo: MediaSession.ControllerInfo, intent: android.content.Intent): Boolean {
+        val k = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent::class.java)
+            else @Suppress("DEPRECATION") intent.getParcelableExtra(android.content.Intent.EXTRA_KEY_EVENT)
+        if (k?.action == android.view.KeyEvent.ACTION_DOWN)
+            Diag.log(ctx, "Taste ${android.view.KeyEvent.keyCodeToString(k.keyCode)} von ${controllerInfo.packageName}")
+        return super.onMediaButtonEvent(session, controllerInfo, intent)
     }
 
     // ---------- Media3-Callback ----------

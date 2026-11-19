@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.2
+- Diagnose: Protokoll zeichnet auf, wohin der Ton geht (Musik- oder Gesprächskanal), den Audio-Modus, verbundene Steuerungen und Tasten von Lenkrad/Radio
+
 ## 0.10.1
 - Android Auto: Ursache der Dauer-Sanduhr behoben (Verklemmung beim Verbinden – die Startseite wird jetzt sofort geliefert)
 

@@ -68,6 +68,7 @@ object Diag {
         ZipOutputStream(out.outputStream().buffered()).use { z ->
             fun put(name: String, text: String) { z.putNextEntry(ZipEntry(name)); z.write(text.toByteArray()); z.closeEntry() }
 
+            AudioDiag.snapshot(c, "Diagnose erstellt")
             // 1. Übersicht
             put("summary.txt", buildString {
                 appendLine("Player-Diagnose ${ts.format(Date())}")
