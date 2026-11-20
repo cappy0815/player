@@ -6,9 +6,12 @@ Einfacher MP3-Player für Android mit eingebautem **Tag-Editor**, **Online-Abgle
 
 Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 
+<img src="screenshots/wiedergabe.jpg" width="300" alt="Wiedergabe-Ansicht mit Cover, Titel, Fortschritt, Steuertasten und den Knöpfen Lyrics und Vollbild">
+
 ## Funktionen
 
 **Wiedergabe**
+- Im Hintergrund über die Benachrichtigung steuern und mit „Beenden“ stoppen; Player aus „Zuletzt verwendet“ wegwischen beendet die Musik (abschaltbar), außerdem „Wiedergabe beenden“ im Menü
 - Bibliothek mit Titeln, Alben, Interpreten, Ordnern und Playlists, Wechsel per Wischen; Listen behalten beim Zurückgehen ihre Position
 - Langdruck aufs App-Icon: Weiterhören, Zufallsmix, Suchen, Lyrics-Vollbild
 - Zuletzt gespielte Liste und Position bleiben nach einem Neustart erhalten

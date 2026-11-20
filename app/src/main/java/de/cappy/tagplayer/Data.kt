@@ -213,6 +213,10 @@ class Prefs private constructor(ctx: Context) {
     /** Beim Abspielen aus einer Liste direkt die Lyrics-Ansicht öffnen */
     var autoLyricsView: Boolean get() = _autoLyricsView.value; set(v) { _autoLyricsView.value = v; sp.edit().putBoolean("autoLyricsView", v).apply() }
 
+    private val _stopOnClose = b("stopOnClose", true)
+    /** App aus den „Zuletzt verwendet“ wegwischen beendet die Wiedergabe */
+    var stopOnClose: Boolean get() = _stopOnClose.value; set(v) { _stopOnClose.value = v; sp.edit().putBoolean("stopOnClose", v).apply() }
+
     private val _shift = b("pixelShift", true)
     var pixelShift: Boolean get() = _shift.value; set(v) { _shift.value = v; sp.edit().putBoolean("pixelShift", v).apply() }
 

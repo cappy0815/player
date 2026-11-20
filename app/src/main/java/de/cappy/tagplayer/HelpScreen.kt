@@ -32,7 +32,7 @@ private val HELP: List<Pair<String, List<String>>> = listOf(
         "Unten erscheint der Miniplayer: antippen öffnet die Wiedergabe, die Knöpfe daneben öffnen Lyrics und Wiedergabeliste.",
         "In der Wiedergabe zwischen Cover und Lyrics wischen.",
         "Wiedergabeliste: zeigt, was gerade läuft und was danach kommt. Antippen springt zum Titel, langer Druck sortiert oder entfernt. Oben: Lyrics, als Playlist speichern, kommende Titel entfernen.",
-        "Im Hintergrund steuerst du Player über die Benachrichtigung (Pull-down): Zurück, Pause/Weiter, Weiter und „Beenden“. Beenden stoppt die Wiedergabe und schließt die Benachrichtigung.",
+        "Im Hintergrund steuerst du Player über die Benachrichtigung (Pull-down): Zurück, Pause/Weiter, Weiter und „Beenden“. Beenden stoppt die Wiedergabe und schließt die Benachrichtigung. Zusätzlich: Player aus „Zuletzt verwendet“ wegwischen beendet die Musik (abschaltbar unter Einstellungen → Wiedergabe), und im Wiedergabe-Menü (⋮) gibt es „Wiedergabe beenden“. „Weiterhören“ merkt sich trotzdem Titel und Stelle.",
         "Langer Druck auf das App-Icon: Weiterhören, Zufallsmix, Suchen, Lyrics-Vollbild. Die Einträge lassen sich auch auf den Startbildschirm ziehen.",
         "Die zuletzt gespielte Liste bleibt auch nach einem Neustart erhalten („Weiterhören“, Kopfhörer-Taste, Android Auto)."
     ),

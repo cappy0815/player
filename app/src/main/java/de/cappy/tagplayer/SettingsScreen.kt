@@ -113,6 +113,8 @@ fun SettingsScreen() {
             Card {
                 SwitchRow("Beim Abspielen immer zu Lyrics wechseln", "Startest du einen Titel aus einer Liste, öffnet sich direkt die Lyrics-Ansicht",
                     p.autoLyricsView) { p.autoLyricsView = it }
+                SwitchRow("App schließen beendet die Wiedergabe", "Wischst du den Player aus „Zuletzt verwendet“ weg, stoppt die Musik. Aus: Musik läuft im Hintergrund weiter",
+                    p.stopOnClose) { p.stopOnClose = it }
             }
 
             SectionTitle("Lyrics-Display")

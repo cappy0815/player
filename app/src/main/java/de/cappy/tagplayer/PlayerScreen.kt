@@ -52,6 +52,7 @@ fun PlayerScreen() {
                     DropdownMenuItem({ Text("Wiedergabeliste") }, onClick = { menu = false; Navi.go(Nav.Queue) })
                     DropdownMenuItem({ Text("Tags bearbeiten") }, onClick = { menu = false; s?.let { Navi.go(Nav.Editor(it.id)) } })
                     DropdownMenuItem({ Text("Lyrics suchen / bearbeiten") }, onClick = { menu = false; s?.let { Navi.go(Nav.LyricsEdit(it.id)) } })
+                    DropdownMenuItem({ Text("Wiedergabe beenden") }, onClick = { menu = false; PlayerHub.stopAll() })
                     DropdownMenuItem({ Text("Lyrics automatisch neu suchen") }, onClick = {
                         menu = false
                         s?.let { scope.launch { LyricsStore.forget(ctx, it); LyricsStore.load(ctx, it, true, force = true) } }

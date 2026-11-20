@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.3
+- Player aus „Zuletzt verwendet“ wegwischen beendet jetzt die Wiedergabe (Einstellungen → Wiedergabe, abschaltbar)
+- Wiedergabe-Menü (⋮): „Wiedergabe beenden“
+- Weiterhören merkt sich dabei Titel und Stelle
+
 ## 0.10.2
 - Diagnose: Protokoll zeichnet auf, wohin der Ton geht (Musik- oder Gesprächskanal), den Audio-Modus, verbundene Steuerungen und Tasten von Lenkrad/Radio
 

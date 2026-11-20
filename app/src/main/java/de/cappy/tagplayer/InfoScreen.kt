@@ -26,6 +26,11 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.10.3" to listOf(
+        "Player aus „Zuletzt verwendet“ wegwischen beendet jetzt die Wiedergabe (Einstellungen → Wiedergabe, abschaltbar)",
+        "Wiedergabe-Menü (⋮): „Wiedergabe beenden“",
+        "Weiterhören merkt sich dabei Titel und Stelle"
+    ),
     "0.10.2" to listOf(
         "Diagnose: Protokoll zeichnet auf, wohin der Ton geht (Musik- oder Gesprächskanal), den Audio-Modus, verbundene Steuerungen und Tasten von Lenkrad/Radio"
     ),

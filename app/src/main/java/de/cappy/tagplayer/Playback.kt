@@ -82,6 +82,12 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         val p = session?.player
+        if (p != null && p.mediaItemCount > 0 && Prefs.get(this).stopOnClose) {
+            Resume.save(this, p)                  // Weiterhören bleibt möglich
+            p.pause(); p.stop(); p.clearMediaItems()
+            Diag.log(this, "App geschlossen: Wiedergabe beendet")
+            stopSelf(); return
+        }
         if (p == null || !p.playWhenReady || p.mediaItemCount == 0) stopSelf()
     }
 
@@ -188,6 +194,8 @@ object PlayerHub {
         return true
     }
 
+    /** Wiedergabe ganz beenden (wie „Beenden“ in der Benachrichtigung); Weiterhören bleibt möglich */
+    fun stopAll() { controller?.sendCustomCommand(AutoLibrary.STOP, android.os.Bundle.EMPTY) }
     fun toggle() { controller?.let { if (it.isPlaying) it.pause() else { if (it.playbackState == Player.STATE_IDLE) it.prepare(); it.play() } } }
     fun next() { controller?.seekToNextMediaItem() }
     fun prev() { controller?.let { if (it.currentPosition > 3000) it.seekTo(0) else it.seekToPreviousMediaItem() } }
