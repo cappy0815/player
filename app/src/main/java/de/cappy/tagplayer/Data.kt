@@ -213,6 +213,10 @@ class Prefs private constructor(ctx: Context) {
     /** Beim Abspielen aus einer Liste direkt die Lyrics-Ansicht öffnen */
     var autoLyricsView: Boolean get() = _autoLyricsView.value; set(v) { _autoLyricsView.value = v; sp.edit().putBoolean("autoLyricsView", v).apply() }
 
+    private val _autoStage = b("autoStage", false)
+    /** Verbindet sich Android Auto, öffnet sich auf dem Handy das Lyrics-Vollbild */
+    var autoStage: Boolean get() = _autoStage.value; set(v) { _autoStage.value = v; sp.edit().putBoolean("autoStage", v).apply() }
+
     private val _stopOnClose = b("stopOnClose", true)
     /** App aus den „Zuletzt verwendet“ wegwischen beendet die Wiedergabe */
     var stopOnClose: Boolean get() = _stopOnClose.value; set(v) { _stopOnClose.value = v; sp.edit().putBoolean("stopOnClose", v).apply() }

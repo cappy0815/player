@@ -63,7 +63,8 @@ private val HELP: List<Pair<String, List<String>>> = listOf(
     ),
     "Android Auto" to listOf(
         "Player erscheint im Auto als Medien-App mit Playlists, Alben, Interpreten, Ordnern, Alle Titel, Zufallsmix und Suche.",
-        "Weil die App nicht aus dem Play Store kommt, einmalig in Android Auto „Unbekannte Quellen“ einschalten: Handy-Einstellungen → Apps → Android Auto → „Weitere Einstellungen in der App“ → ganz unten 10-mal auf „Version“ tippen → oben rechts ⋮ → Entwicklereinstellungen → „Unbekannte Quellen“. Dann neu verbinden. Menünamen können je nach Version abweichen."
+        "Weil die App nicht aus dem Play Store kommt, einmalig in Android Auto „Unbekannte Quellen“ einschalten: Handy-Einstellungen → Apps → Android Auto → „Weitere Einstellungen in der App“ → ganz unten 10-mal auf „Version“ tippen → oben rechts ⋮ → Entwicklereinstellungen → „Unbekannte Quellen“. Dann neu verbinden. Menünamen können je nach Version abweichen.",
+        "Optional geht beim Verbinden mit Android Auto auf dem Handy das Lyrics-Vollbild auf: Einstellungen → Android Auto → „Lyrics-Vollbild mit Android Auto öffnen“. Dafür braucht Player die Berechtigung „Über anderen Apps einblenden“, sonst lässt Android den Start aus dem Hintergrund nicht zu."
     ),
     "Updates & Diagnose" to listOf(
         "Player prüft einmal täglich, ob es eine neue Version gibt, und zeigt dann oben „⬆ Update“. Einstellungen → Updates: Status, „Jetzt prüfen“, automatische Prüfung abschalten.",

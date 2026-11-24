@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.4
+- Option: Lyrics-Vollbild öffnet sich auf dem Handy, sobald Android Auto sich verbindet (Einstellungen → Android Auto)
+
 ## 0.10.3
 - Player aus „Zuletzt verwendet“ wegwischen beendet jetzt die Wiedergabe (Einstellungen → Wiedergabe, abschaltbar)
 - Wiedergabe-Menü (⋮): „Wiedergabe beenden“

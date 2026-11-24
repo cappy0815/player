@@ -65,6 +65,8 @@ Voraussetzung: Android 10 oder neuer.
 
 Player erscheint in Android Auto als Medien-App mit Playlists, Alben, Interpreten, Ordnern, „Alle Titel“, Zufallsmix und Suche.
 
+Optional geht beim Verbinden mit Android Auto auf dem Handy das Lyrics-Vollbild auf (Einstellungen → Android Auto). Dafür braucht die App die Berechtigung „Über anderen Apps einblenden“.
+
 Weil die App nicht aus dem Play Store kommt, zeigt Android Auto sie erst nach einer einmaligen Einstellung:
 
 1. Handy-Einstellungen → Apps → Android Auto → „Weitere Einstellungen in der App“

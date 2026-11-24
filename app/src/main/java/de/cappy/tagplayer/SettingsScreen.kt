@@ -153,6 +153,13 @@ fun SettingsScreen() {
                     color = TextDim, fontSize = 12.sp, lineHeight = 17.sp)
                 Spacer(Modifier.height(4.dp))
                 Text("Menünamen können je nach Android-Auto-Version leicht abweichen.", color = TextDim.copy(alpha = .7f), fontSize = 11.sp)
+                Spacer(Modifier.height(6.dp))
+                SwitchRow("Lyrics-Vollbild mit Android Auto öffnen",
+                    "Verbindet sich Android Auto mit Player, geht auf dem Handy das Lyrics-Vollbild auf. Braucht „Über anderen Apps einblenden“.",
+                    p.autoStage) {
+                    p.autoStage = it
+                    if (it && !Settings.canDrawOverlays(ctx)) openOverlaySettings(ctx)
+                }
             }
 
             SectionTitle("Diagnose")

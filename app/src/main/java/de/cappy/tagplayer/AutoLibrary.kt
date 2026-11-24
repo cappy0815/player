@@ -198,7 +198,25 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
     }
 
     // ---------- „Beenden“ in der Benachrichtigung ----------
+    /** Android Auto verbunden -> Lyrics-Vollbild auf dem Handy (Option, höchstens einmal pro Minute) */
+    private fun openStageForAuto() {
+        if (!Prefs.get(ctx).autoStage) return
+        val now = System.currentTimeMillis()
+        if (now - lastAutoStage < 60_000) return
+        lastAutoStage = now
+        // Start aus dem Hintergrund erlaubt Android nur mit „Über anderen Apps einblenden“
+        if (!android.provider.Settings.canDrawOverlays(ctx)) { Diag.log(ctx, "Auto: Lyrics-Vollbild nicht geöffnet – Berechtigung „Über anderen Apps“ fehlt"); return }
+        try {
+            ctx.startActivity(android.content.Intent(ctx, StageActivity::class.java)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                .putExtra(StageActivity.EXTRA_FROM_LOCK, true))
+            Diag.log(ctx, "Auto: Lyrics-Vollbild geöffnet")
+        } catch (e: Exception) { Diag.log(ctx, "Auto: Lyrics-Vollbild fehlgeschlagen: ${e.message}") }
+    }
+
     companion object {
+        const val GEARHEAD = "com.google.android.projection.gearhead"
+        @Volatile private var lastAutoStage = 0L
         val STOP = androidx.media3.session.SessionCommand("de.cappy.tagplayer.STOP", Bundle.EMPTY)
         fun stopButton(): androidx.media3.session.CommandButton =
             androidx.media3.session.CommandButton.Builder(androidx.media3.session.CommandButton.ICON_STOP)
@@ -208,6 +226,7 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
     override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
         // wer steuert? (Auto per Bluetooth meldet sich meist als com.android.bluetooth, Android Auto als com.google.android.projection.gearhead)
         if (controller.packageName != ctx.packageName) Diag.log(ctx, "Steuerung verbunden: ${controller.packageName} (Version ${controller.controllerVersion})")
+        if (controller.packageName == GEARHEAD) openStageForAuto()
         val cmds = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(STOP).build()
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
             .setAvailableSessionCommands(cmds)
@@ -248,6 +267,7 @@ class AutoLibrary(private val ctx: Context) : MediaLibrarySession.Callback {
                                   params: MediaLibraryService.LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> {
         this.session = session
         Diag.log(ctx, "Auto: verbunden mit ${browser.packageName}")
+        if (browser.packageName == GEARHEAD) openStageForAuto()
         scope.launch { ensureLoaded(0) }          // läuft, sobald der Haupt-Thread wieder frei ist
         return com.google.common.util.concurrent.Futures.immediateFuture(LibraryResult.ofItem(root(), params))
     }

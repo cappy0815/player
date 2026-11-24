@@ -26,6 +26,9 @@ const val PROJECT_URL = "https://cappy0815.github.io/#player"
 
 /** Versionsgeschichte, neueste zuerst */
 val CHANGELOG = listOf(
+    "0.10.4" to listOf(
+        "Option: Lyrics-Vollbild öffnet sich auf dem Handy, sobald Android Auto sich verbindet (Einstellungen → Android Auto)"
+    ),
     "0.10.3" to listOf(
         "Player aus „Zuletzt verwendet“ wegwischen beendet jetzt die Wiedergabe (Einstellungen → Wiedergabe, abschaltbar)",
         "Wiedergabe-Menü (⋮): „Wiedergabe beenden“",
