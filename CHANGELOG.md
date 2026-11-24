@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.6
+- Lyrics-Korrekturmodus beim laufenden Lied: „✎ Korrigieren“ (Lyrics-Ansicht) bzw. Stift im Vollbild, dann die Zeile antippen, die gerade gesungen wird
+- Folgende Zeilen rutschen mit, ±0,5 s für alles, Zurück, Speichern als eigene Lyrics
+- Funktioniert auch bei Text ohne Zeitangaben: angetippte Zeilen bekommen die Zeit, der Rest wird verteilt
+
 ## 0.10.5
 - Lyrics-Zeichen in den Titellisten und der Wiedergabeliste: orange synchron, weiß nur Text, rot nicht gefunden
 - Lyrics für viele Titel auf einmal suchen: lange drücken → „Lyrics suchen“ oder „Lyrics prüfen“ in Ordner, Album, Interpret und Playlist

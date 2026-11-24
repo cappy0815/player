@@ -154,7 +154,7 @@ fun Stage(prefs: Prefs, onClose: () -> Unit) {
                     }
                 }
             } else {
-                LyricsView(lyr, LyricsStore.status, prefs.stageFontSp, Modifier.weight(1f).fillMaxWidth(), seekOnTap = false)
+                LyricsView(lyr, LyricsStore.status, prefs.stageFontSp, Modifier.weight(1f).fillMaxWidth(), seekOnTap = false, fixButton = false)
             }
         }
 
@@ -192,6 +192,10 @@ fun Stage(prefs: Prefs, onClose: () -> Unit) {
                     Icon(if (prefs.stageKeepOn) Icons.Default.LightMode else Icons.Default.Bedtime,
                         if (prefs.stageKeepOn) "Display immer an" else "Display geht normal aus",
                         tint = if (prefs.stageKeepOn) Accent else TextDim, modifier = Modifier.size(30.dp))
+                }
+                val lyrNow = if (LyricsStore.currentSongId == song?.id) LyricsStore.current else null
+                if (song != null && lyrNow != null && !LyricsFix.active) IconButton(onClick = { LyricsFix.start(song, lyrNow); controls = false }) {
+                    Icon(Icons.Default.Edit, "Lyrics korrigieren", tint = Color.White, modifier = Modifier.size(28.dp))
                 }
                 IconButton(onClick = onClose) { Icon(Icons.Default.Close, "Schließen", tint = TextDim, modifier = Modifier.size(30.dp)) }
             }

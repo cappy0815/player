@@ -44,15 +44,21 @@ fun rememberPosition(): Long {
  */
 @Composable
 fun LyricsView(
-    lyrics: Lyrics?,
+    lyricsIn: Lyrics?,
     status: String,
     fontSp: Int,
     modifier: Modifier = Modifier,
     dim: Float = 1f,
     seekOnTap: Boolean = true,
     onEdit: (() -> Unit)? = null,
-    onSync: ((Lyrics) -> Unit)? = null
+    onSync: ((Lyrics) -> Unit)? = null,
+    fixButton: Boolean = true
 ) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    // Titel gewechselt -> laufende Korrektur sichern
+    LaunchedEffect(PlayerHub.currentId) { LyricsFix.onSongChanged(ctx, PlayerHub.currentId) }
+    val fixing = LyricsFix.active && LyricsFix.songId == PlayerHub.currentId && LyricsFix.preview != null
+    val lyrics = if (fixing) LyricsFix.preview else lyricsIn
     if (lyrics == null) {
         Box(modifier, contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -121,11 +127,19 @@ fun LyricsView(
                         .graphicsLayer { scaleX = scale; scaleY = scale }
                         .clip(RoundedCornerShape(14.dp))
                         .background(bg)
-                        .then(if (lyrics.synced && seekOnTap) Modifier.clickable { userScrollAt = 0; PlayerHub.seek(line.timeMs) } else Modifier)
+                        .then(when {
+                            fixing -> Modifier.clickable { userScrollAt = 0; LyricsFix.tap(i) }
+                            lyrics.synced && seekOnTap -> Modifier.clickable { userScrollAt = 0; PlayerHub.seek(line.timeMs) }
+                            else -> Modifier
+                        })
                         .padding(horizontal = 10.dp, vertical = (fontSp / 6).dp)
                 )
             }
             item { Spacer(Modifier.height(with(density) { (viewH * 0.55f).toDp() })) }
+        }
+        if (fixing) { LyricsFixBar(dim = dim); return@Column }
+        if (fixButton) Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.Center) {
+            LyricsFixButton(Library.byId(PlayerHub.currentId), lyricsIn)
         }
         Text(
             "Quelle: ${lyrics.source}" + if (!lyrics.synced) " · ohne Zeitangaben, Stelle geschätzt" else "",
