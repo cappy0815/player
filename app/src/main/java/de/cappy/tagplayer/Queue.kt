@@ -50,6 +50,8 @@ fun SongsMenu(expanded: Boolean, onDismiss: () -> Unit, label: String, single: S
             onClick = { onDismiss(); Matcher.prepare(label, songs()); Navi.go(Nav.Match) })
         DropdownMenuItem({ Text("Cover online prüfen") }, leadingIcon = { Icon(Icons.Default.Image, null) },
             onClick = { onDismiss(); Matcher.prepare(label, songs(), MatchMode.COVER); Navi.go(Nav.Match) })
+        DropdownMenuItem({ Text("Lyrics suchen") }, leadingIcon = { Icon(Icons.Default.Lyrics, null) },
+            onClick = { onDismiss(); LyricsBatch.prepare(label, songs()); Navi.go(Nav.LyricsBatchNav) })
     }
 }
 
@@ -117,6 +119,7 @@ fun QueueScreen() {
                             fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(s?.artist ?: "", color = TextDim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
+                    LyricsBadge(s)
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Optionen", tint = TextDim) }
                         DropdownMenu(menu, { menu = false }, containerColor = Surface2) {

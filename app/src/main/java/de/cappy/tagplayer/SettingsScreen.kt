@@ -107,6 +107,12 @@ fun SettingsScreen() {
                 SwitchRow("Beim Abspielen automatisch suchen", "LRCLIB, nur wenn die Datei keine Lyrics enthält", p.autoLyrics) { p.autoLyrics = it }
                 SwitchRow("Gefundene Lyrics in die MP3 schreiben", "Sonst nur im App-Speicher (braucht „alle Dateien“)",
                     p.lyricsToTag) { p.lyricsToTag = it }
+                SwitchRow("Lyrics-Zeichen in den Listen", "Orange = synchron, weiß = nur Text, rot = nicht gefunden, kein Zeichen = noch nicht gesucht",
+                    p.lyricsBadges) { p.lyricsBadges = it }
+                Spacer(Modifier.height(6.dp))
+                Pill("Lyrics-Übersicht aller Titel", modifier = Modifier.fillMaxWidth(), enabled = Library.songs.isNotEmpty()) {
+                    LyricsBatch.prepare("Alle Titel", Library.songs.toList()); Navi.go(Nav.LyricsBatchNav)
+                }
             }
 
             SectionTitle("Wiedergabe")

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.5
+- Lyrics-Zeichen in den Titellisten und der Wiedergabeliste: orange synchron, weiß nur Text, rot nicht gefunden
+- Lyrics für viele Titel auf einmal suchen: lange drücken → „Lyrics suchen“ oder „Lyrics prüfen“ in Ordner, Album, Interpret und Playlist
+- Lyrics-Übersicht aller Titel mit Filter (Einstellungen → Lyrics); auf Wunsch „nicht gefunden“ erneut versuchen oder „nur Text“ durch synchrone ersetzen
+
 ## 0.10.4
 - Option: Lyrics-Vollbild öffnet sich auf dem Handy, sobald Android Auto sich verbindet (Einstellungen → Android Auto)
 

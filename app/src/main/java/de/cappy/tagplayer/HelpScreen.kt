@@ -42,7 +42,10 @@ private val HELP: List<Pair<String, List<String>>> = listOf(
         "Nichts gefunden oder falsch? In der Lyrics-Ansicht „Selbst suchen oder einfügen“ bzw. ⋮ → „Lyrics suchen / bearbeiten“. Interpret und Titel lassen sich frei eingeben – bei Live-Aufnahmen hilft der Titel ohne „(Live)“.",
         "Text ohne Zeitangaben: „Zeiten beim Hören setzen“ – das Lied startet von vorn, du tippst bei jeder Zeile auf den großen Knopf.",
         "Kommt der Text zu früh oder zu spät, im Lyrics-Editor den Zeitversatz in 0,1- oder 0,5-Sekunden-Schritten anpassen.",
-        "Einstellung „Beim Abspielen immer zu Lyrics wechseln“ (Einstellungen → Wiedergabe) öffnet beim Start eines Titels direkt die Lyrics."
+        "Einstellung „Beim Abspielen immer zu Lyrics wechseln“ (Einstellungen → Wiedergabe) öffnet beim Start eines Titels direkt die Lyrics.",
+        "Wurde für einen Titel einmal nichts gefunden, sucht die App nicht von selbst erneut. Neu suchen: ⋮ → „Lyrics automatisch neu suchen“ (laufender Titel) oder die Sammelsuche.",
+        "Lyrics-Zeichen in den Listen: orange = synchron (Zeilen laufen mit), weiß = nur Text, rot = nicht gefunden. Kein Zeichen = noch nicht gesucht. Abschaltbar unter Einstellungen → Lyrics.",
+        "Sammelsuche: Ordner, Album, Interpret oder Playlist lange drücken → „Lyrics suchen“, oder oben „Lyrics prüfen“. Für alle Titel: Einstellungen → Lyrics → „Lyrics-Übersicht aller Titel“. Dort nach Stand filtern und wählen, ob „nicht gefunden“ erneut versucht und „nur Text“ durch synchrone Lyrics ersetzt werden soll. Die Suche läuft weiter, wenn du den Bildschirm verlässt."
     ),
     "Lyrics-Vollbild" to listOf(
         "Vollbild-Symbol in der Wiedergabe: schwarzer Bildschirm, große Schrift, gedimmt.",

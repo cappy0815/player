@@ -14,6 +14,7 @@ Gebaut für lokale MP3s auf dem Handy, ohne Konto, ohne Werbung, ohne Streaming.
 - Im Hintergrund über die Benachrichtigung steuern und mit „Beenden“ stoppen; Player aus „Zuletzt verwendet“ wegwischen beendet die Musik (abschaltbar), außerdem „Wiedergabe beenden“ im Menü
 - Bibliothek mit Titeln, Alben, Interpreten, Ordnern und Playlists, Wechsel per Wischen; Listen behalten beim Zurückgehen ihre Position
 - Langdruck aufs App-Icon: Weiterhören, Zufallsmix, Suchen, Lyrics-Vollbild
+- Lyrics-Übersicht: Zeichen in jeder Titelliste (synchron / nur Text / nicht gefunden) und Sammelsuche für Ordner, Alben, Playlists oder alle Titel
 - Zuletzt gespielte Liste und Position bleiben nach einem Neustart erhalten
 - Hintergrund-Wiedergabe mit Steuerung in Benachrichtigung und Sperrbildschirm
 - Zufall, Wiederholen, Pause beim Abziehen des Kopfhörers

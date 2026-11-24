@@ -250,6 +250,8 @@ fun SongRow(s: Song, onClick: () -> Unit) {
             Text(listOf(s.artist, s.album).filter { it.isNotBlank() }.joinToString(" · ").ifBlank { "ohne Tags" },
                 color = TextDim, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+        LyricsBadge(s)
+        Spacer(Modifier.width(6.dp))
         Text(fmtTime(s.durationMs), color = TextDim, fontSize = 12.sp)
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Optionen", tint = TextDim) }

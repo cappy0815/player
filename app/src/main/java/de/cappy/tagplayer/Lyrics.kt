@@ -78,7 +78,7 @@ object LyricsStore {
     private fun key(path: String): String =
         MessageDigest.getInstance("SHA-1").digest(path.toByteArray()).joinToString("") { "%02x".format(it) }
 
-    private fun cacheFile(ctx: Context, path: String) = File(File(ctx.filesDir, "lyrics").apply { mkdirs() }, key(path) + ".lrc")
+    internal fun cacheFile(ctx: Context, path: String) = File(File(ctx.filesDir, "lyrics").apply { mkdirs() }, key(path) + ".lrc")
 
     suspend fun load(ctx: Context, song: Song, allowOnline: Boolean, force: Boolean = false) {
         if (!force && currentSongId == song.id && current != null) return
@@ -145,13 +145,36 @@ object LyricsStore {
     private suspend fun save(ctx: Context, song: Song, text: String, toTag: Boolean) = withContext(Dispatchers.IO) {
         try { cacheFile(ctx, song.path).writeText(text) } catch (_: Exception) {}
         if (toTag && !text.startsWith("#") && Tags.canEdit(song.path)) try { Tags.writeLyrics(song.path, text) } catch (_: Exception) {}
+        LyricsIndex.refresh(ctx, song)
+    }
+
+    /**
+     * Online-Suche für einen Titel ohne Anzeige (Sammelsuche). Gleiche Reihenfolge wie beim Abspielen:
+     * synchron vor Klartext. Eigene Lyrics bleiben unangetastet. Läuft der Titel gerade, wird die Anzeige aktualisiert.
+     */
+    suspend fun searchFor(ctx: Context, song: Song): LState {
+        if (manualFile(ctx, song.path).exists()) return LyricsIndex.of(song) ?: LState.PLAIN
+        val embedded = Lyrics.parse(withContext(Dispatchers.IO) { Tags.readLyrics(song.path) }, "in der Datei")
+        if (embedded?.synced == true) return LState.SYNCED
+        val (title, artist) = MusicBrainz.searchTerms(song, null)
+        val r = LyricsSearch.auto(artist, title, song.album, song.durationMs)
+        val synced = r?.synced?.ifBlank { null }
+        val toTag = Prefs.get(ctx).lyricsToTag
+        val st = when {
+            synced != null -> { save(ctx, song, synced, toTag); LState.SYNCED }
+            embedded != null -> { save(ctx, song, "#PLAIN", false); LState.PLAIN }
+            r?.best != null -> { save(ctx, song, r.best!!, toTag); LState.PLAIN }
+            else -> { save(ctx, song, "#NONE", false); LState.NONE }
+        }
+        if (PlayerHub.currentId == song.id) { currentSongId = -1; load(ctx, song, allowOnline = false) }
+        return st
     }
 
     /**
      * Eigene oder ausgewählte Lyrics für einen Titel festlegen (gespeichert im App-Speicher,
      * optional zusätzlich in der MP3). Gilt sofort für die Anzeige.
      */
-    private fun manualFile(ctx: Context, path: String) = File(File(ctx.filesDir, "lyrics").apply { mkdirs() }, key(path) + ".manual.lrc")
+    internal fun manualFile(ctx: Context, path: String) = File(File(ctx.filesDir, "lyrics").apply { mkdirs() }, key(path) + ".manual.lrc")
 
     /**
      * Eigene oder ausgewählte Lyrics für einen Titel festlegen. Sie haben Vorrang vor allem anderen
@@ -163,6 +186,7 @@ object LyricsStore {
             manualFile(ctx, song.path).writeText(text)
             if (Prefs.get(ctx).lyricsToTag && Tags.canEdit(song.path)) try { Tags.writeLyrics(song.path, text) } catch (_: Exception) {}
         }
+        LyricsIndex.refresh(ctx, song)
         if (currentSongId == song.id || PlayerHub.currentId == song.id) {
             currentSongId = song.id; current = Lyrics.parse(text, source); status = ""
         }
@@ -191,5 +215,6 @@ object LyricsStore {
     fun forget(ctx: Context, song: Song) {
         try { cacheFile(ctx, song.path).delete() } catch (_: Exception) {}
         if (currentSongId == song.id) { current = null; currentSongId = -1 }
+        LyricsIndex.refresh(ctx, song)
     }
 }

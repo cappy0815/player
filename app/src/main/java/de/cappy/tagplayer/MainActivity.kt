@@ -44,6 +44,7 @@ sealed class Nav {
     data object Info : Nav()
     data object Queue : Nav()
     data object Help : Nav()
+    data object LyricsBatchNav : Nav()
 }
 
 /** Kleiner Navigationsstapel */
@@ -145,6 +146,10 @@ fun Root() {
     // Update-Prüfung höchstens einmal pro Tag beim Start
     LaunchedEffect(Unit) { Update.load(ctx); if (Update.due()) Update.check(ctx) }
     LaunchedEffect(granted) { if (granted && !Library.loadedOnce) Library.load(ctx) }
+    // Lyrics-Übersicht im Hintergrund (nur Dateien, die neu oder geändert sind, werden geöffnet)
+    LaunchedEffect(Library.loadedOnce, Library.version, Library.songs.size) {
+        if (Library.loadedOnce && !Library.loading) LyricsIndex.scan(ctx, Library.songs.toList())
+    }
 
     Box(Modifier.fillMaxSize().background(Bg)) {
         if (!granted) {
@@ -183,6 +188,7 @@ fun Root() {
                     is Nav.LyricsSync -> LyricsSyncScreen(n.songId)
                     Nav.Info -> InfoScreen()
                     Nav.Queue -> QueueScreen()
+                    Nav.LyricsBatchNav -> LyricsBatchScreen()
                     Nav.Help -> HelpScreen()
                 }
             }

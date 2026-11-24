@@ -65,8 +65,11 @@ fun CheckButtons(label: String, songs: List<Song>, playlistButton: Boolean = tru
             Matcher.prepare(label, songs, MatchMode.COVER); Navi.go(Nav.Match)
         }
     }
-    if (playlistButton) Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-        Pill("Alle zur Playlist", modifier = Modifier.fillMaxWidth(), enabled = songs.isNotEmpty()) { PlaylistUi.pending = songs }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Pill("Lyrics prüfen", modifier = Modifier.weight(1f), enabled = songs.isNotEmpty()) {
+            LyricsBatch.prepare(label, songs); Navi.go(Nav.LyricsBatchNav)
+        }
+        if (playlistButton) Pill("Alle zur Playlist", modifier = Modifier.weight(1f), enabled = songs.isNotEmpty()) { PlaylistUi.pending = songs }
     }
 }
 
